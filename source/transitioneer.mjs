@@ -1,14 +1,7 @@
-import {
-    Animation
-} from "./animation";
+import spark from "@candlefw/spark";
 
-import {
-    TransformTo
-} from "./transformto";
-
-import {
-    Scheduler
-} from "../common/scheduler";
+import { Animation } from "./animation";
+import { TransformTo } from "./transformto";
 
 const Transitioneer = (function() {
 
@@ -54,7 +47,7 @@ const Transitioneer = (function() {
         //The highest in_delay value will determine how much time is afforded before the animations for the in portion are started.
 
         if (typeof(anim_data_or_duration) == "object") {
-            
+
             if (anim_data_or_duration.match) {
                 this.TT[anim_data_or_duration.match] = TransformTo(anim_data_or_duration.obj);
             } else {
@@ -171,13 +164,13 @@ const Transitioneer = (function() {
                 seq.run(t);
             }
 
-                t = Math.max(t - this.in_delay, 0);
+            t = Math.max(t - this.in_delay, 0);
 
-                for (let i = 0; i < this.in_seq.length; i++) {
-                    let seq = this.in_seq[i];
-                    seq.run(t);
-                }
-            
+            for (let i = 0; i < this.in_seq.length; i++) {
+                let seq = this.in_seq[i];
+                seq.run(t);
+            }
+
         }
 
         scheduledUpdate(step, time) {
@@ -195,10 +188,10 @@ const Transitioneer = (function() {
 
             if (this.reverse) {
                 if (this.time > 0)
-                    return Scheduler.queueUpdate(this);
+                    return spark.queueUpdate(this);
             } else {
                 if (this.time < this.duration)
-                    return Scheduler.queueUpdate(this);
+                    return spark.queueUpdate(this);
             }
 
             if (this.res)
@@ -211,6 +204,4 @@ const Transitioneer = (function() {
     return { createTransition: (OVERRIDE) => new Transition(OVERRIDE) };
 })();
 
-export {
-    Transitioneer
-};
+export { Transitioneer };

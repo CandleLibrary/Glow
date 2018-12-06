@@ -1,6 +1,6 @@
 {
   "name": "@candlefw/glow",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Animation Library",
   "main": "source/glow.mjs",
   "scripts": {
@@ -38,8 +38,8 @@
   },
   "homepage": "https://github.com/galactrax/cfw-glow#readme",
   "dependencies": {
-    "@candlefw/css": "0.0.2",
+    "@candlefw/css": "0.0.3",
     "@candlefw/math": "0.0.1",
-    "@candlefw/spark": "0.0.2"
+    "@candlefw/spark": "0.0.3"
   }
 }

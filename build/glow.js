@@ -370,11 +370,11 @@ var glow = (function (exports) {
 	            },
 
 	            push(node) {
-	                this.addC(node);
+	                this.addChild(node);
 	            },
 
 	            unshift(node) {
-	                this.addC(node, (this.fch) ? this.fch.pre : null);
+	                this.addChild(node, (this.fch) ? this.fch.pre : null);
 	            },
 
 	            replace(old_node, new_node) {
@@ -403,14 +403,14 @@ var glow = (function (exports) {
 
 	            insertBefore: function(node) {
 	                if (this.par)
-	                    this.par.addC(node, this.pre);
+	                    this.par.addChild(node, this.pre);
 	                else
 	                    LinkedList.methods.defaults.insertBefore.call(this, node);
 	            },
 
 	            insertAfter: function(node) {
 	                if (this.par)
-	                    this.par.addC(node, this);
+	                    this.par.addChild(node, this);
 	                else
 	                    LinkedList.methods.defaults.insertAfter.call(this, node);
 	            },
@@ -420,7 +420,7 @@ var glow = (function (exports) {
 	                if (!child) return;
 
 	                if (child.par)
-	                    child.par.remC(child);
+	                    child.par.removeChild(child);
 
 	                if (prev && prev.par && prev.par == this) {
 	                    if (child == prev) return;
@@ -5279,12 +5279,12 @@ var glow = (function (exports) {
 	        return true;
 	    }
 
-	    matchMedia(win = window){
+	    matchMedia(win = window) {
 
 	        if (this.media_selector) {
-	            for(let i = 0; i < this.media_selector.length; i++){
+	            for (let i = 0; i < this.media_selector.length; i++) {
 	                let m = this.media_selector[i];
-	                   let props = m.props;
+	                let props = m.props;
 	                for (let a in props) {
 	                    let prop = props[a];
 	                    if (!prop(win))
@@ -5295,14 +5295,14 @@ var glow = (function (exports) {
 	        return true;
 	    }
 
-	        /**
+	    /**
 	     * Retrieves the set of rules from all matching selectors for an element.
 	     * @param      {HTMLElement}  element - An element to retrieve CSS rules.
 	     * @public
 	     */
 	    getApplicableRules(element, rule = new CSSRule(), win = window) {
 
-	        if(!this.matchMedia(win)) return;
+	        if (!this.matchMedia(win)) return;
 
 	        let gen = this.getApplicableSelectors(element),
 	            sel = null;
@@ -5613,20 +5613,20 @@ var glow = (function (exports) {
 
 	            return res(this);
 	        });
-	        
+
 	    }
 
-	    isSame(inCSSRuleBody){
-	        if(inCSSRuleBody instanceof CSSRuleBody){
-	            if(this.media_selector){
-	                if(inCSSRuleBody.media_selector);
-	            }else if(!inCSSRuleBody.media_selector)
-	                    return true;
+	    isSame(inCSSRuleBody) {
+	        if (inCSSRuleBody instanceof CSSRuleBody) {
+	            if (this.media_selector) {
+	                if (inCSSRuleBody.media_selector) ;
+	            } else if (!inCSSRuleBody.media_selector)
+	                return true;
 	        }
 	        return false;
 	    }
 
-	    merge(inCSSRuleBody){
+	    merge(inCSSRuleBody) {
 	        this.parse(whind$1(inCSSRuleBody + ""));
 	    }
 
@@ -5684,14 +5684,7 @@ var glow = (function (exports) {
 	    }
 	}
 
-	/**
-	 * CSSRuleBody implements all of ll
-	 * @extends ll
-	 * @memberof  module:wick~internals.html.CSSRuleBody
-	 * @private
-	 */
-	Object.assign(CSSRuleBody.prototype, LinkedList.props.defaults, LinkedList.props.children, LinkedList.props.parent, LinkedList.methods.defaults, LinkedList.methods.parent_child);
-	LinkedList.setGettersAndSetters(CSSRuleBody.prototype);
+	LinkedList.mixinTree(CSSRuleBody);
 
 	/**
 	 * Container for all rules found in a CSS string or strings.
@@ -5710,7 +5703,7 @@ var glow = (function (exports) {
 	        this.res = null;
 	        this.observers = [];
 	        
-	        this.addC(new CSSRuleBody());
+	        this.addChild(new CSSRuleBody());
 	    }
 
 	    _resolveReady_(res, rej) {
@@ -5745,12 +5738,12 @@ var glow = (function (exports) {
 
 	    * getApplicableSelectors(element, win = window) {
 
-	        for (let node = this.fch; node; node = this.getN(node)) {
+	        for (let node = this.fch; node; node = this.getNextChild(node)) {
 
 	            if(node.matchMedia(win)){
 	                let gen = node.getApplicableSelectors(element, win);
 	                let v = null;
-	                while (v = gen.next().value)
+	                while ((v = gen.next().value))
 	                    yield v;
 	            }
 	        }
@@ -5762,7 +5755,7 @@ var glow = (function (exports) {
 	     * @public
 	     */
 	    getApplicableRules(element, rule = new CSSRule(), win = window) {
-	        for (let node = this.fch; node; node = this.getN(node))
+	        for (let node = this.fch; node; node = this.getNextChild(node))
 	            node.getApplicableRules(element, rule, win);
 	        return rule;
 	    }
@@ -5774,14 +5767,14 @@ var glow = (function (exports) {
 	     */
 	    getRule(string) {
 	        let r = null;
-	        for (let node = this.fch; node; node = this.getN(node))
+	        for (let node = this.fch; node; node = this.getNextChild(node))
 	            r = node.getRule(string, r);
 	        return r;
 	    }
 
 	    toString(off = 0) {
 	        let str = "";
-	        for (let node = this.fch; node; node = this.getN(node))
+	        for (let node = this.fch; node; node = this.getNextChild(node))
 	            str += node.toString(off);
 	        return str;
 	    }
@@ -5845,8 +5838,7 @@ var glow = (function (exports) {
 	 * @memberof  module:wick~internals.html.CSSRootNode
 	 * @private
 	 */
-	Object.assign(CSSRootNode.prototype, LinkedList.props.defaults, LinkedList.props.children, LinkedList.props.parent, LinkedList.methods.defaults, LinkedList.methods.parent_child);
-	LinkedList.setGettersAndSetters(CSSRootNode.prototype);
+	LinkedList.mixinTree(CSSRootNode);
 
 	/**
 	 * Builds a CSS object graph that stores `selectors` and `rules` pulled from a CSS string. 
@@ -6256,108 +6248,17 @@ var glow = (function (exports) {
 	    };
 	})();
 
-	function setTo(to, seq, duration, easing){
-
-	    let cs = window.getComputedStyle(to, null);
-	    
-	    var rect = to.getBoundingClientRect();
-	    let to_width = cs.getPropertyValue("width");
-	    let to_height = cs.getPropertyValue("height");
-	    let margin_left = parseFloat(cs.getPropertyValue("margin-left"));
-	    let to_bgc = cs.getPropertyValue("background-color");
-
-	    let left = seq.props.left, offl = to.offsetLeft - margin_left;
-	    let left_diff = (left.keys[0].val) - (rect.left);
-
-	    left.keys[0].val = new left.type(offl + left_diff, "px");
-	    left.keys[1].val = new left.type(offl,"px");
-
-	    left.keys[1].dur = duration;
-	    left.keys[1].len = duration;
-	    left.keys[1].ease = easing;
-	    left.duration = duration;
-
-	    let top = seq.props.top;
-	    let top_diff = top.keys[0].val - rect.top;
-	    top.keys[0].val = new top.type(to.offsetTop + top_diff, "px");
-	    top.keys[1].val = new top.type(to.offsetTop ,"px");
-	    top.keys[1].dur = duration;
-	    top.keys[1].len = duration;
-	    top.keys[1].ease = easing;
-	    top.duration = duration;
-
-
-	    seq.props.width.keys[0].val = new seq.props.width.type(to_width);
-	    seq.props.width.keys[0].dur = duration;
-	    seq.props.width.keys[0].len = duration;
-	    seq.props.width.keys[0].ease = easing;
-	    seq.props.width.duration = duration;
-
-	    seq.props.height.keys[0].val = new seq.props.height.type(to_height);
-	    seq.props.height.keys[0].dur = duration;
-	    seq.props.height.keys[0].len = duration; 
-	    seq.props.height.keys[0].ease = easing; 
-	    seq.props.height.duration = duration;
-
-	    seq.props.backgroundColor.keys[0].val = new seq.props.backgroundColor.type(to_bgc);
-	    seq.props.backgroundColor.keys[0].dur = duration; 
-	    seq.props.backgroundColor.keys[0].len = duration; 
-	    seq.props.backgroundColor.keys[0].ease = easing; 
-	    seq.props.backgroundColor.duration = duration;
-
-	    seq.obj = to;
-
-	    seq.addEventListener("stopped", ()=>{
-	        debugger
-	    });
-	}
-
-	/**
-	    Transform one element from another back to itself
-	    @alias module:wick~internals.TransformTo
-	*/
-	function TransformTo(element_from, element_to, duration = 500, easing = Animation.easing.linear, HIDE_OTHER) {
-	    let rect = element_from.getBoundingClientRect();
-	    let cs = window.getComputedStyle(element_from, null);
-	    let margin_left = parseFloat(cs.getPropertyValue("margin"));
-
-	    let seq = Animation.createSequence({
-	        obj: element_from,
-	        width: { value: "0px"},
-	        height: { value: "0px"},
-	        backgroundColor: { value: "rgb(1,1,1)"},
-	        left: [{value:rect.left+"px"},{ value: "0px"}],
-	        top: [{value:rect.top+"px"},{ value: "0px"}]
-	    });
-
-	    if (!element_to) {
-
-	        let a = (seq) => (element_to, duration = 500, easing = Animation.easing.linear,  HIDE_OTHER = false) => {
-	            setTo(element_to, seq, duration, easing);
-	            seq.duration = duration;
-	            return seq;
-	        };
-
-	        return a(seq);
-	    }
-
-	    setTo(element_to, duration, easing);
-	    seq.duration = duration;
-	    return seq;
-	}
-
 	/**
 	 * Used to call the Scheduler after a JavaScript runtime tick.
 	 *
 	 * Depending on the platform, caller will either map to requestAnimationFrame or it will be a setTimout.
 	 */
-	const caller = (window && window.requestAnimationFrame) ? window.requestAnimationFrame : (f) => {
+	 
+	const caller = (typeof(window) == "object" && window.requestAnimationFrame) ? window.requestAnimationFrame : (f) => {
 	    setTimeout(f, 1);
 	};
 
-
 	const perf = (typeof(performance) == "undefined") ? { now: () => Date.now() } : performance;
-
 
 
 	/**
@@ -6462,6 +6363,96 @@ var glow = (function (exports) {
 	}
 
 	const spark = new Spark();
+
+	function setTo(to, seq, duration, easing){
+
+	    let cs = window.getComputedStyle(to, null);
+	    
+	    var rect = to.getBoundingClientRect();
+	    let to_width = cs.getPropertyValue("width");
+	    let to_height = cs.getPropertyValue("height");
+	    let margin_left = parseFloat(cs.getPropertyValue("margin-left"));
+	    let to_bgc = cs.getPropertyValue("background-color");
+
+	    let left = seq.props.left, offl = to.offsetLeft - margin_left;
+	    let left_diff = (left.keys[0].val) - (rect.left);
+
+	    left.keys[0].val = new left.type(offl + left_diff, "px");
+	    left.keys[1].val = new left.type(offl,"px");
+
+	    left.keys[1].dur = duration;
+	    left.keys[1].len = duration;
+	    left.keys[1].ease = easing;
+	    left.duration = duration;
+
+	    let top = seq.props.top;
+	    let top_diff = top.keys[0].val - rect.top;
+	    top.keys[0].val = new top.type(to.offsetTop + top_diff, "px");
+	    top.keys[1].val = new top.type(to.offsetTop ,"px");
+	    top.keys[1].dur = duration;
+	    top.keys[1].len = duration;
+	    top.keys[1].ease = easing;
+	    top.duration = duration;
+
+
+	    seq.props.width.keys[0].val = new seq.props.width.type(to_width);
+	    seq.props.width.keys[0].dur = duration;
+	    seq.props.width.keys[0].len = duration;
+	    seq.props.width.keys[0].ease = easing;
+	    seq.props.width.duration = duration;
+
+	    seq.props.height.keys[0].val = new seq.props.height.type(to_height);
+	    seq.props.height.keys[0].dur = duration;
+	    seq.props.height.keys[0].len = duration; 
+	    seq.props.height.keys[0].ease = easing; 
+	    seq.props.height.duration = duration;
+
+	    seq.props.backgroundColor.keys[0].val = new seq.props.backgroundColor.type(to_bgc);
+	    seq.props.backgroundColor.keys[0].dur = duration; 
+	    seq.props.backgroundColor.keys[0].len = duration; 
+	    seq.props.backgroundColor.keys[0].ease = easing; 
+	    seq.props.backgroundColor.duration = duration;
+
+	    seq.obj = to;
+
+	    seq.addEventListener("stopped", ()=>{
+	        debugger
+	    });
+	}
+
+	/**
+	    Transform one element from another back to itself
+	    @alias module:wick~internals.TransformTo
+	*/
+	function TransformTo(element_from, element_to, duration = 500, easing = Animation.easing.linear, HIDE_OTHER) {
+	    let rect = element_from.getBoundingClientRect();
+	    let cs = window.getComputedStyle(element_from, null);
+	    let margin_left = parseFloat(cs.getPropertyValue("margin"));
+
+	    let seq = Animation.createSequence({
+	        obj: element_from,
+	        width: { value: "0px"},
+	        height: { value: "0px"},
+	        backgroundColor: { value: "rgb(1,1,1)"},
+	        left: [{value:rect.left+"px"},{ value: "0px"}],
+	        top: [{value:rect.top+"px"},{ value: "0px"}]
+	    });
+
+	    if (!element_to) {
+
+	        let a = (seq) => (element_to, duration = 500, easing = Animation.easing.linear,  HIDE_OTHER = false) => {
+	            setTo(element_to, seq, duration, easing);
+	            seq.duration = duration;
+	            return seq;
+	        };
+
+	        return a(seq);
+	    }
+
+	    setTo(element_to, duration, easing);
+	    seq.duration = duration;
+	    return seq;
+	}
 
 	const Transitioneer = (function() {
 

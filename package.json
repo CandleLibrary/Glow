@@ -1,6 +1,6 @@
 {
   "name": "@candlefw/glow",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Animation Library",
   "main": "source/glow.mjs",
   "scripts": {
@@ -13,8 +13,7 @@
     "url": "git+https://github.com/galactrax/cfw-glow.git"
   },
   "keywords": [
-    "Linked",
-    "Lists"
+    "Animation"
   ],
   "author": "Anthony Weathersby",
   "license": "MIT",

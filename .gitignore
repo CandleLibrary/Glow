@@ -87,4 +87,4 @@ Press h to open a hovercard with more details.
 documents/api/*
 
 #Sublime Workspace
-.sublime-workspace
+*.sublime-workspace

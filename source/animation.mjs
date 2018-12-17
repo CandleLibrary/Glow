@@ -1,4 +1,5 @@
 import { CBezier } from "@candlefw/math";
+import Spark from "@candlefw/spark";
 import css from "@candlefw/css";
 
 const CSS_Length = css.types.length;
@@ -261,14 +262,14 @@ const Animation = (function anim() {
         scheduledUpdate(a, t) {
 
             if (this.run(this.time += t))
-                Scheduler.queueUpdate(this);
+                Spark.queueUpdate(this);
             else
                 this.issueEvent("stopped");
         }
 
         play(from = 0) {
             this.time = from;
-            Scheduler.queueUpdate(this);
+            Spark.queueUpdate(this);
             this.issueEvent("started");
         }
 
@@ -332,12 +333,12 @@ const Animation = (function anim() {
         scheduledUpdate(a, t) {
         	this.time += t
             if (this.run(this.time))
-                Scheduler.queueUpdate(this);
+                Spark.queueUpdate(this);
         }
 
         play(from = 0) {
             this.time = 0;
-            Scheduler.queueUpdate(this);
+            Spark.queueUpdate(this);
         }
     }
 

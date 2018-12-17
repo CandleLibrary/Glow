@@ -1,6 +1,6 @@
 {
   "name": "@candlefw/glow",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Animation Library",
   "main": "source/glow.mjs",
   "scripts": {

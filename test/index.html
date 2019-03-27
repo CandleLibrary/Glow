@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<style>
+		#a{
+			position: relative;
+			width:90px;
+			height: 30px;
+			background-color: green;
+			color:white;
+		}
+		#b{
+			position: relative;
+			top:80px;
+			width:120px;
+			height: 45px;
+			background-color: red;
+			color:green;
+		}
+	</style>
+</head>
+<body>
+	This is a test
+
+	<p>Element transform</p>
+	<div id="a">Test</div>
+	<div id="b">Test</div>
+<script src="/build/glow.js"></script>
+<script>
+	console.log(glow)
+	const a = document.getElementById("a");
+	const b = document.getElementById("b");
+	glow.USE_TRANSFORM = true;
+	let trs = glow.Transitioneer.createTransition()
+	trs.out({obj:a,match:"double", duration:600}, 1000);
+	trs.in({obj:b,match:"double", duration:1450, delay:300, easing:glow.default.easing.ease_out, USE_TRANSFORM:true},600, 300);
+	trs.start();
+
+</script>
+</body>
+</html>
+
+<!--
+Using transform transitions 
+
+	glow.transitioneer.createTransition
+
+-->

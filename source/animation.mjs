@@ -164,7 +164,12 @@ const Animation = (function anim() {
             } else
                 obj[prop_name] = value;
         }
+
+        unsetProp(obj, prop_name){
+            this.setProp(obj, prop_name, "", CSS_STYLE)
+        }
     }
+
 
     /**
      * Stores animation data for a group of properties. Defines delay and repeat.
@@ -177,6 +182,7 @@ const Animation = (function anim() {
             this.type = setType(obj);
             this.obj = null;
             this.DESTROYED = false;
+            this.FINISHED = false;
             this.events = {};
 
             switch (this.type) {
@@ -218,6 +224,10 @@ const Animation = (function anim() {
             }
         }
 
+        unsetProps(props){
+            for (let name in this.props)
+                this.props[name].unsetProp(this.obj, name);
+        }
 
         /**
          * Sets the properties.
@@ -260,7 +270,6 @@ const Animation = (function anim() {
         }
 
         scheduledUpdate(a, t) {
-
             if (this.run(this.time += t))
                 Spark.queueUpdate(this);
             else

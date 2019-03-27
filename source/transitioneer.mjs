@@ -161,14 +161,21 @@ const Transitioneer = (function() {
         step(t) {
             for (let i = 0; i < this.out_seq.length; i++) {
                 let seq = this.out_seq[i];
-                seq.run(t);
+                if(!seq.run(t) && !seq.FINISHED){
+                    seq.issueEvent("stopped");
+                    seq.FINISHED = true;
+                }
+
             }
 
             t = Math.max(t - this.in_delay, 0);
 
             for (let i = 0; i < this.in_seq.length; i++) {
                 let seq = this.in_seq[i];
-                seq.run(t);
+                if(!seq.run(t) && !seq.FINISHED){
+                    seq.issueEvent("stopped");
+                    seq.FINISHED = true;
+                }
             }
 
         }

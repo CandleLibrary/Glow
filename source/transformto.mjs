@@ -33,7 +33,7 @@ function setTo(to, seq, duration, easing, from){
 
     //Use width and height a per
 
-    if(true){
+    if(false){
         setToWithTransform(from_rect, rect, seq);
         //left.keys[0].val = new left.type(start_left, "px");
         //left.keys[1].val = new left.type(final_left,"px");
@@ -50,8 +50,11 @@ function setTo(to, seq, duration, easing, from){
         abs_diff = (left.keys[0].val - rect.left);
 
         if(pos== "relative"){
-            start_left = abs_diff;
-            final_left = 0;
+            //get existing offset 
+            const left = parseFloat(cs.getPropertyValue("left")) || 0;
+
+            start_left = abs_diff +left;
+            final_left = left;
         }else{
             start_left = to.offsetLeft + abs_diff;
             final_left = to.offsetLeft;
@@ -71,8 +74,9 @@ function setTo(to, seq, duration, easing, from){
         abs_diff = (top.keys[0].val - rect.top);
 
         if(pos== "relative"){
-            start_top = abs_diff;
-            final_top = 0;
+             const top = parseFloat(cs.getPropertyValue("top")) || 0;
+            start_top = abs_diff + top;
+            final_top = top;
         }else{
             start_top = to.offsetTop + abs_diff;
             final_top = to.offsetTop;
@@ -122,6 +126,8 @@ function setTo(to, seq, duration, easing, from){
 
     seq.obj = to;
 
+
+
     seq.addEventListener("stopped", ()=>{
         seq.unsetProps();
     });
@@ -138,13 +144,13 @@ export function TransformTo(element_from, element_to, duration = 500, easing = A
 
     let seq = Animation.createSequence({
         obj: element_from,
-        transform: [{value:"translate(0,0)"},{value:"translate(0,0)"}],
-        //width: { value: "0px"},
-        //height: { value: "0px"},
+        // /transform: [{value:"translate(0,0)"},{value:"translate(0,0)"}],
+        width: { value: "0px"},
+        height: { value: "0px"},
         backgroundColor: { value: "rgb(1,1,1)"},
         color: { value: "rgb(1,1,1)"},
-        //left: [{value:rect.left+"px"},{ value: "0px"}],
-        //top: [{value:rect.top+"px"},{ value: "0px"}]
+        left: [{value:rect.left+"px"},{ value: "0px"}],
+        top: [{value:rect.top+"px"},{ value: "0px"}]
     });
 
     if (!element_to) {
@@ -152,6 +158,7 @@ export function TransformTo(element_from, element_to, duration = 500, easing = A
         let a = (seq) => (element_to, duration = 500, easing = Animation.easing.linear,  HIDE_OTHER = false) => {
             setTo(element_to, seq, duration, easing, element_from);
             seq.duration = duration;
+        console.log(seq.toCSSString("MumboJumbo"))
             return seq;
         };
 

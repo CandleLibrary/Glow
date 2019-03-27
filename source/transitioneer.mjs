@@ -131,13 +131,18 @@ const Transitioneer = (function() {
 
         start(time = 0, speed = 1, reverse = false) {
 
+            for (let i = 0; i < this.in_seq.length; i++) {
+                let seq = this.in_seq[i];
+                seq.beginCSSAnimation()
+            }
+
             this.time = time;
             this.speed = Math.abs(speed);
             this.reverse = reverse;
 
             if (this.reverse)
                 this.speed = -this.speed;
-
+            return
             return new Promise((res, rej) => {
                 if (this.duration > 0)
                     this.scheduledUpdate(0, 0);
@@ -156,6 +161,7 @@ const Transitioneer = (function() {
 
         stop() {
             this.PLAY = false;
+            //There may be a need to kill any existing CSS based animations
         }
 
         step(t) {
@@ -165,7 +171,6 @@ const Transitioneer = (function() {
                     seq.issueEvent("stopped");
                     seq.FINISHED = true;
                 }
-
             }
 
             t = Math.max(t - this.in_delay, 0);

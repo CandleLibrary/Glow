@@ -2,268 +2,12 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-class Point2D extends Float64Array{
-	
-	constructor(x, y) {
-		super(2);
-
-		if (typeof(x) == "number") {
-			this[0] = x;
-			this[1] = y;
-			return;
-		}
-
-		if (x instanceof Array) {
-			this[0] = x[0];
-			this[1] = x[1];
-		}
-	}
-
-	draw(ctx, s = 1){
-		ctx.beginPath();
-		ctx.moveTo(this.x*s,this.y*s);
-		ctx.arc(this.x*s, this.y*s, s*0.01, 0, 2*Math.PI);
-		ctx.stroke();
-	}
-
-	get x (){ return this[0]}
-	set x (v){if(typeof(v) !== "number") return; this[0] = v;}
-
-	get y (){ return this[1]}
-	set y (v){if(typeof(v) !== "number") return; this[1] = v;}
-}
-
-const sqrt = Math.sqrt;
-const cos = Math.cos;
-const acos = Math.acos;
-const PI = Math.PI; 
-const pow = Math.pow;
-
-// A real-cuberoots-only function:
-function cuberoot(v) {
-  if(v<0) return -pow(-v,1/3);
-  return pow(v,1/3);
-}
-
-function point(t, p1, p2, p3, p4) {
-	var ti = 1 - t;
-	var ti2 = ti * ti;
-	var t2 = t * t;
-	return ti * ti2 * p1 + 3 * ti2 * t * p2 + t2 * 3 * ti * p3 + t2 * t * p4;
-}
-
-
-class CBezier extends Float64Array{
-	constructor(x1, y1, x2, y2, x3, y3, x4, y4) {
-		super(8);
-
-		//Map P1 and P2 to {0,0,1,1} if only four arguments are provided; for use with animations
-		if(arguments.length == 4){
-			this[0] = 0;
-			this[1] = 0;
-			this[2] = x1;
-			this[3] = y1;
-			this[4] = x2;
-			this[5] = y2;
-			this[6] = 1;
-			this[7] = 1;
-			return;
-		}
-		
-		if (typeof(x1) == "number") {
-			this[0] = x1;
-			this[1] = y1;
-			this[2] = x2;
-			this[3] = y2;
-			this[4] = x3;
-			this[5] = y3;
-			this[6] = x4;
-			this[7] = y4;
-			return;
-		}
-
-		if (x1 instanceof Array) {
-			this[0] = x1[0];
-			this[1] = x1[1];
-			this[2] = x1[2];
-			this[3] = x1[3];
-			this[4] = x1[4];
-			this[5] = x1[5];
-			this[6] = x1[6];
-			this[7] = x1[4];
-			return;
-		}
-	}
-
-	get x1 (){ return this[0]}
-	set x1 (v){this[0] = v;}
-	get x2 (){ return this[2]}
-	set x2 (v){this[2] = v;}
-	get x3 (){ return this[4]}
-	set x3 (v){this[4] = v;}
-	get x4 (){ return this[6]}
-	set x4 (v){this[6] = v;}
-	get y1 (){ return this[1]}
-	set y1 (v){this[1] = v;}
-	get y2 (){ return this[3]}
-	set y2 (v){this[3] = v;}
-	get y3 (){ return this[5]}
-	set y3 (v){this[5] = v;}
-	get y4 (){ return this[7]}
-	set y4 (v){this[7] = v;}
-
-	add(x,y = 0){
-		return new CCurve(
-			this[0] + x,
-			this[1] + y,
-			this[2] + x,
-			this[3] + y,
-			this[4] + x,
-			this[5] + y,
-			this[6] + x,
-			this[7] + y
-		)
-	}
-
-	valY(t){
-		return point(t, this[1], this[3], this[5], this[7]);
-	}
-
-	valX(t){
-		return point(t, this[0], this[2], this[4], this[6]);
-	}
-
-	point(t) {
-		return new Point2D(
-			point(t, this[0], this[2], this[4], this[6]),
-			point(t, this[1], this[3], this[5], this[7])
-		)
-	}
-	
-	/** 
-		Acquired from : https://pomax.github.io/bezierinfo/
-		Author:  Mike "Pomax" Kamermans
-		GitHub: https://github.com/Pomax/
-	*/
-
-	roots(p1,p2,p3,p4) {
-		var d = (-p1 + 3 * p2 - 3 * p3 + p4),
-			a = (3 * p1 - 6 * p2 + 3 * p3) / d,
-			b = (-3 * p1 + 3 * p2) / d,
-			c = p1 / d;
-
-		var p = (3 * b - a * a) / 3,
-			p3 = p / 3,
-			q = (2 * a * a * a - 9 * a * b + 27 * c) / 27,
-			q2 = q / 2,
-			discriminant = q2 * q2 + p3 * p3 * p3;
-
-		// and some variables we're going to use later on:
-		var u1, v1, root1, root2, root3;
-
-		// three possible real roots:
-		if (discriminant < 0) {
-			var mp3 = -p / 3,
-				mp33 = mp3 * mp3 * mp3,
-				r = sqrt(mp33),
-				t = -q / (2 * r),
-				cosphi = t < -1 ? -1 : t > 1 ? 1 : t,
-				phi = acos(cosphi),
-				crtr = cuberoot(r),
-				t1 = 2 * crtr;
-			root1 = t1 * cos(phi / 3) - a / 3;
-			root2 = t1 * cos((phi + 2 * PI) / 3) - a / 3;
-			root3 = t1 * cos((phi + 4 * PI) / 3) - a / 3;
-			return [root3, root1, root2]
-		}
-
-		// three real roots, but two of them are equal:
-		if (discriminant === 0) {
-			u1 = q2 < 0 ? cuberoot(-q2) : -cuberoot(q2);
-			root1 = 2 * u1 - a / 3;
-			root2 = -u1 - a / 3;
-			return [root2, root1];
-		}
-
-		// one real root, two complex roots
-		var sd = sqrt(discriminant);
-		u1 = cuberoot(sd - q2);
-		v1 = cuberoot(sd + q2);
-		root1 = u1 - v1 - a / 3;
-		return [root1];
-	}
-
-	rootsY() {
-		return this.roots(this[1],this[3],this[5],this[7]);
-	}
-
-	rootsX() {
-		return this.roots(this[0],this[2],this[4],this[6]);
-	}
-	
-	getYatX(x){
-		var x1 = this[0] - x, x2 = this[2] - x, x3 = this[4] - x, x4 = this[6] - x,
-			x2_3 = x2 * 3, x1_3 = x1 *3, x3_3 = x3 * 3,
-			d = (-x1 + x2_3 - x3_3 + x4), di = 1/d, i3 = 1/3,
-			a = (x1_3 - 6 * x2 + x3_3) * di,
-			b = (-x1_3 + x2_3) * di,
-			c = x1 * di,
-			p = (3 * b - a * a) * i3,
-			p3 = p * i3,
-			q = (2 * a * a * a - 9 * a * b + 27 * c) * (1/27),
-			q2 = q * 0.5,
-			discriminant = q2 * q2 + p3 * p3 * p3;
-
-		// and some variables we're going to use later on:
-		var u1, v1, root;
-
-		//Three real roots can never happen if p1(0,0) and p4(1,1);
-
-		// three real roots, but two of them are equal:
-		if (discriminant < 0) {
-			var mp3 = -p / 3,
-				mp33 = mp3 * mp3 * mp3,
-				r = sqrt(mp33),
-				t = -q / (2 * r),
-				cosphi = t < -1 ? -1 : t > 1 ? 1 : t,
-				phi = acos(cosphi),
-				crtr = cuberoot(r),
-				t1 = 2 * crtr;
-			root = t1 * cos((phi + 4 * PI) / 3) - a / 3;
-		}else if (discriminant === 0) {
-			u1 = q2 < 0 ? cuberoot(-q2) : -cuberoot(q2);
-			root = -u1 - a * i3;
-		}else{
-			var sd = sqrt(discriminant);
-			// one real root, two complex roots
-			u1 = cuberoot(sd - q2);
-			v1 = cuberoot(sd + q2);
-			root = u1 - v1 - a * i3;	
-		}
-
-		return point(root, this[1], this[3], this[5], this[7]);
-	}
-	/**
-		Given a Canvas 2D context object and scale value, strokes a cubic bezier curve.
-	*/
-	draw(ctx, s = 1){
-		ctx.beginPath();
-		ctx.moveTo(this[0]*s, this[1]*s);
-		ctx.bezierCurveTo(
-			this[2]*s, this[3]*s,
-			this[4]*s, this[5]*s,
-			this[6]*s, this[7]*s
-			);
-		ctx.stroke();
-	}
-}
-
 /**
  * Used to call the Scheduler after a JavaScript runtime tick.
  *
  * Depending on the platform, caller will either map to requestAnimationFrame or it will be a setTimout.
  */
- 
+    
 const caller = (typeof(window) == "object" && window.requestAnimationFrame) ? window.requestAnimationFrame : (f) => {
     setTimeout(f, 1);
 };
@@ -289,7 +33,16 @@ class Spark {
 
         this.queue_switch = 0;
 
-        this.callback = () => this.update();
+        this.callback = ()=>{};
+
+        if(typeof(window) !== "undefined"){
+            window.addEventListener("load",()=>{
+                this.callback = () => this.update();
+                caller(this.callback);
+            });
+        }else{
+            this.callback = () => this.update();
+        }
 
         this.frame_time = perf.now();
 
@@ -320,9 +73,11 @@ class Spark {
 
         this.frame_time = perf.now() | 0;
 
-        this.SCHEDULE_PENDING = true;
 
-        caller(this.callback);
+        if(!this.SCHEDULE_PENDING){
+            this.SCHEDULE_PENDING = true;
+            caller(this.callback);
+        }
     }
 
     removeFromQueue(object){
@@ -1160,7 +915,6 @@ class Lexer {
         destination.line = this.line;
         destination.sl = this.sl;
         destination.masked_values = this.masked_values;
-        destination.symbol_map = this.symbol_map;
         return destination;
     }
 
@@ -1294,7 +1048,7 @@ ${is_iws}`;
 
         const USE_CUSTOM_SYMBOLS = !!this.symbol_map;
         let NORMAL_PARSE = true;
-        
+
         if (USE_CUSTOM_SYMBOLS) {
 
             let code = str.charCodeAt(off);
@@ -1304,13 +1058,13 @@ ${is_iws}`;
 
             while(code == 32 && IWS)
                 (code = str.charCodeAt(++off2), off++);
-            
+
             while ((m$$1 = map.get(code))) {
                 map = m$$1;
                 off2 += 1;
                 code = str.charCodeAt(off2);
             }
-            
+
             if (map.IS_SYM) {
                NORMAL_PARSE = false;
                base = off;
@@ -1336,7 +1090,7 @@ ${is_iws}`;
                         case 0: //NUMBER
                             while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)]));
 
-                            if ((str[off] == "e" || str[off] == "E") && (12 & number_and_identifier_table[str.charCodeAt(off)])) {
+                            if ((str[off] == "e" || str[off] == "E") && (12 & number_and_identifier_table[str.charCodeAt(off+1)])) {
                                 off++;
                                 if (str[off] == "-") off++;
                                 marker.off = off;
@@ -1502,7 +1256,6 @@ ${is_iws}`;
         peek_marker.tl = marker.tl;
         peek_marker.char = marker.char;
         peek_marker.line = marker.line;
-        peek_marker.symbol_map = marker.symbol_map;
         this.next(peek_marker);
         return peek_marker;
     }
@@ -1595,7 +1348,6 @@ ${is_iws}`;
 
     /** Adds symbol to symbol_map. This allows custom symbols to be defined and tokenized by parser. **/
     addSymbol(sym) {
-
         if (!this.symbol_map)
             this.symbol_map = new Map;
 
@@ -3320,7 +3072,7 @@ class CSS_Number extends Number {
     }
 }
 
-class Point2D$1 extends Float64Array{
+class Point2D extends Float64Array{
 	
 	constructor(x, y) {
 		super(2);
@@ -3351,19 +3103,19 @@ class Point2D$1 extends Float64Array{
 	set y (v){if(typeof(v) !== "number") return; this[1] = v;}
 }
 
-const sqrt$1 = Math.sqrt;
-const cos$1 = Math.cos;
-const acos$1 = Math.acos;
-const PI$1 = Math.PI; 
-const pow$1 = Math.pow;
+const sqrt = Math.sqrt;
+const cos = Math.cos;
+const acos = Math.acos;
+const PI = Math.PI; 
+const pow = Math.pow;
 
 // A real-cuberoots-only function:
-function cuberoot$1(v) {
-  if(v<0) return -pow$1(-v,1/3);
-  return pow$1(v,1/3);
+function cuberoot(v) {
+  if(v<0) return -pow(-v,1/3);
+  return pow(v,1/3);
 }
 
-function point$1(t, p1, p2, p3, p4) {
+function point(t, p1, p2, p3, p4) {
 	var ti = 1 - t;
 	var ti2 = ti * ti;
 	var t2 = t * t;
@@ -3371,7 +3123,7 @@ function point$1(t, p1, p2, p3, p4) {
 }
 
 
-class CBezier$1 extends Float64Array{
+class CBezier extends Float64Array{
 	constructor(x1, y1, x2, y2, x3, y3, x4, y4) {
 		super(8);
 
@@ -3444,17 +3196,17 @@ class CBezier$1 extends Float64Array{
 	}
 
 	valY(t){
-		return point$1(t, this[1], this[3], this[5], this[7]);
+		return point(t, this[1], this[3], this[5], this[7]);
 	}
 
 	valX(t){
-		return point$1(t, this[0], this[2], this[4], this[6]);
+		return point(t, this[0], this[2], this[4], this[6]);
 	}
 
 	point(t) {
-		return new Point2D$1(
-			point$1(t, this[0], this[2], this[4], this[6]),
-			point$1(t, this[1], this[3], this[5], this[7])
+		return new Point2D(
+			point(t, this[0], this[2], this[4], this[6]),
+			point(t, this[1], this[3], this[5], this[7])
 		)
 	}
 	
@@ -3483,30 +3235,30 @@ class CBezier$1 extends Float64Array{
 		if (discriminant < 0) {
 			var mp3 = -p / 3,
 				mp33 = mp3 * mp3 * mp3,
-				r = sqrt$1(mp33),
+				r = sqrt(mp33),
 				t = -q / (2 * r),
 				cosphi = t < -1 ? -1 : t > 1 ? 1 : t,
-				phi = acos$1(cosphi),
-				crtr = cuberoot$1(r),
+				phi = acos(cosphi),
+				crtr = cuberoot(r),
 				t1 = 2 * crtr;
-			root1 = t1 * cos$1(phi / 3) - a / 3;
-			root2 = t1 * cos$1((phi + 2 * PI$1) / 3) - a / 3;
-			root3 = t1 * cos$1((phi + 4 * PI$1) / 3) - a / 3;
+			root1 = t1 * cos(phi / 3) - a / 3;
+			root2 = t1 * cos((phi + 2 * PI) / 3) - a / 3;
+			root3 = t1 * cos((phi + 4 * PI) / 3) - a / 3;
 			return [root3, root1, root2]
 		}
 
 		// three real roots, but two of them are equal:
 		if (discriminant === 0) {
-			u1 = q2 < 0 ? cuberoot$1(-q2) : -cuberoot$1(q2);
+			u1 = q2 < 0 ? cuberoot(-q2) : -cuberoot(q2);
 			root1 = 2 * u1 - a / 3;
 			root2 = -u1 - a / 3;
 			return [root2, root1];
 		}
 
 		// one real root, two complex roots
-		var sd = sqrt$1(discriminant);
-		u1 = cuberoot$1(sd - q2);
-		v1 = cuberoot$1(sd + q2);
+		var sd = sqrt(discriminant);
+		u1 = cuberoot(sd - q2);
+		v1 = cuberoot(sd + q2);
 		root1 = u1 - v1 - a / 3;
 		return [root1];
 	}
@@ -3541,25 +3293,25 @@ class CBezier$1 extends Float64Array{
 		if (discriminant < 0) {
 			var mp3 = -p / 3,
 				mp33 = mp3 * mp3 * mp3,
-				r = sqrt$1(mp33),
+				r = sqrt(mp33),
 				t = -q / (2 * r),
 				cosphi = t < -1 ? -1 : t > 1 ? 1 : t,
-				phi = acos$1(cosphi),
-				crtr = cuberoot$1(r),
+				phi = acos(cosphi),
+				crtr = cuberoot(r),
 				t1 = 2 * crtr;
-			root = t1 * cos$1((phi + 4 * PI$1) / 3) - a / 3;
+			root = t1 * cos((phi + 4 * PI) / 3) - a / 3;
 		}else if (discriminant === 0) {
-			u1 = q2 < 0 ? cuberoot$1(-q2) : -cuberoot$1(q2);
+			u1 = q2 < 0 ? cuberoot(-q2) : -cuberoot(q2);
 			root = -u1 - a * i3;
 		}else{
-			var sd = sqrt$1(discriminant);
+			var sd = sqrt(discriminant);
 			// one real root, two complex roots
-			u1 = cuberoot$1(sd - q2);
-			v1 = cuberoot$1(sd + q2);
+			u1 = cuberoot(sd - q2);
+			v1 = cuberoot(sd + q2);
 			root = u1 - v1 - a * i3;	
 		}
 
-		return point$1(root, this[1], this[3], this[5], this[7]);
+		return point(root, this[1], this[3], this[5], this[7]);
 	}
 	/**
 		Given a Canvas 2D context object and scale value, strokes a cubic bezier curve.
@@ -3576,7 +3328,7 @@ class CBezier$1 extends Float64Array{
 	}
 }
 
-class CSS_Bezier extends CBezier$1 {
+class CSS_Bezier extends CBezier {
 	static parse(l, rule, r) {
 
 		let out = null;
@@ -3610,6 +3362,10 @@ class CSS_Bezier extends CBezier$1 {
 		}
 
 		return out;
+	}
+
+	toString(){
+		 return `cubic-bezier(${this[2]},${this[3]},${this[4]},${this[5]})`;
 	}
 }
 
@@ -3756,10 +3512,12 @@ function getValue(lex, attribute) {
     return n;
 }
 
-function ParseString(lex, transform) {
-    
-    if (typeof(lex) == "string")
-            lex = whind$1(lex);
+function ParseString(string, transform) {
+    let lex = null;
+    lex = string;
+
+    if(typeof(string) == "string")
+        lex = whind$1(string);
     
     while (!lex.END) {
         let tx = lex.tx;
@@ -3888,7 +3646,7 @@ class CSS_Transform2D extends Float64Array {
                 this[2] = px[2];
                 this[3] = px[3];
                 this[4] = px[4];
-            } else if(typeof(px) == "string"){ ParseString(px, this);}
+            } else if (typeof(px) == "string") ParseString(px, this);
             else {
                 this[0] = px;
                 this[1] = py;
@@ -4713,27 +4471,25 @@ const media_feature_definitions = {
  */
 class CSSSelector {
 
-    constructor(selectors /* string */ , selectors_arrays /* array */ ) {
+    constructor(value = "", value_array = []) {
 
         /**
          * The raw selector string value
          * @package
          */
-
-        this.v = selectors;
+        this.v = value;
 
         /**
          * Array of separated selector strings in reverse order.
          * @package
          */
+        this.a = value_array;
 
-        this.a = selectors_arrays;
-
-        /**
-         * The CSSRule.
-         * @package
-         */
+        // CSS Rulesets the selector is member of .
         this.r = null;
+
+        // CSS root the selector is a child of. 
+        this.root = null;
     }
 
     get id() {
@@ -5964,6 +5720,7 @@ class CSSRuleBody {
                 let selector = this.parseSelector(lexer, this);
 
                 if (selector) {
+                    selector.root = this;
                     if (!this._selectors_[selector.id]) {
                         l = selectors.push(selector);
                         this._selectors_[selector.id] = selector;
@@ -6161,7 +5918,7 @@ class Segment {
     }
 
     setList() {
-        if(this.DEMOTED) debugger
+        //if(this.DEMOTED) debugger
         if (this.prod && this.list.innerHTML == "") {
             if (this.DEMOTED || !this.prod.buildList(this.list, this))
                 this.menu_icon.style.display = "none";
@@ -6919,13 +6676,13 @@ class ONE_OF$1 extends JUX$1 {
 Object.assign(ONE_OF$1.prototype, ONE_OF.prototype);
 
 var ui_productions = /*#__PURE__*/Object.freeze({
-	JUX: JUX$1,
-	AND: AND$1,
-	OR: OR$1,
-	ONE_OF: ONE_OF$1,
-	LiteralTerm: LiteralTerm$1,
-	ValueTerm: ValueTerm$1,
-	SymbolTerm: SymbolTerm$1
+    JUX: JUX$1,
+    AND: AND$1,
+    OR: OR$1,
+    ONE_OF: ONE_OF$1,
+    LiteralTerm: LiteralTerm$1,
+    ValueTerm: ValueTerm$1,
+    SymbolTerm: SymbolTerm$1
 });
 
 function createCache(cacher){
@@ -7032,10 +6789,6 @@ class UIProp {
 UIProp = createCache(UIProp);
 
 const props$1 = Object.assign({}, property_definitions);
-
-//import { UIValue } from "./ui_value.mjs";
-
-const props$2 = Object.assign({}, property_definitions);
 
 /**
  * Container for all rules found in a CSS string or strings.
@@ -7213,6 +6966,7 @@ const CSS_Percentage$1 = CSSParser.types.percentage;
 const CSS_Color$1 = CSSParser.types.color;
 const CSS_Transform2D$1 = CSSParser.types.transform2D;
 const CSS_Path$1 = CSSParser.types.path;
+const CSS_Bezier$1 = CSSParser.types.cubic_bezier;
 
 const Animation = (function anim() {
     var USE_TRANSFORM = false;
@@ -7230,7 +6984,7 @@ const Animation = (function anim() {
         return JS_OBJECT;
     }
 
-    const Linear = { getYatX: x => x };
+    const Linear = { getYatX: x => x, toString:()=>"linear" };
 
     /**
      * Class to linearly interpolate number.
@@ -7327,11 +7081,11 @@ const Animation = (function anim() {
             return own_key.val;
         }
 
-        run(obj, prop_name, time, type) {
+        getValueAtTime(time = 0) {
             let val_start = this.current_val,
                 val_end = this.current_val,
-                key, val_out = val_start,
-                in_range = time < this.duration;
+                key, val_out = val_start;
+
 
             for (let i = 0; i < this.keys.length; i++) {
                 key = this.keys[i];
@@ -7358,9 +7112,13 @@ const Animation = (function anim() {
                 }
             }
 
-            this.setProp(obj, prop_name, val_out, type);
+            return val_out;
+        }
 
-            return in_range;
+        run(obj, prop_name, time, type) {
+            const val_out = this.getValueAtTime(time);
+            this.setProp(obj, prop_name, val_out, type);
+            return time < this.duration;
         }
 
         setProp(obj, prop_name, value, type) {
@@ -7371,8 +7129,13 @@ const Animation = (function anim() {
                 obj[prop_name] = value;
         }
 
-        unsetProp(obj, prop_name){
+        unsetProp(obj, prop_name) {
             this.setProp(obj, prop_name, "", CSS_STYLE);
+        }
+
+        toCSSString(time = 0, prop_name = "") {
+            const value = this.getValueAtTime(time);
+            return `${prop_name}:${value.toString()}`;
         }
     }
 
@@ -7385,10 +7148,11 @@ const Animation = (function anim() {
         constructor(obj, props) {
             this.duration = 0;
             this.time = 0;
-            this.type = setType(obj);
             this.obj = null;
+            this.type = setType(obj);
             this.DESTROYED = false;
             this.FINISHED = false;
+            this.CSS_ANIMATING = false;
             this.events = {};
 
             switch (this.type) {
@@ -7430,7 +7194,7 @@ const Animation = (function anim() {
             }
         }
 
-        unsetProps(props){
+        unsetProps(props) {
             for (let name in this.props)
                 this.props[name].unsetProp(this.obj, name);
         }
@@ -7514,6 +7278,57 @@ const Animation = (function anim() {
             if (events)
                 events.forEach(e => e(this));
         }
+
+        toCSSString(keyfram_id) {
+
+            const strings = [`.${keyfram_id}{animation:${keyfram_id} ${this.duration}ms ${Animation.easing.ease_out.toString()}}`, `@keyframes ${keyfram_id}{`];
+
+            // TODO: Use some function to determine the number of steps that should be taken
+            // This should reflect the different keyframe variations that can occure between
+            // properties.
+            // For now, just us an arbitrary number
+
+            const len = 2;
+            const len_m_1 = len - 1;
+            for (let i = 0; i < len; i++) {
+
+                strings.push(`${Math.round((i/len_m_1)*100)}%{`);
+
+                for (let name in this.props)
+                    strings.push(this.props[name].toCSSString((i / len_m_1) * this.duration, name.replace(/([A-Z])/g, (match, p1)=>"-"+match.toLowerCase())) + ";");
+
+                strings.push("}");
+            }
+
+            strings.push("}");
+
+            return strings.join("\n");
+        }
+
+        beginCSSAnimation() {
+            if (!this.CSS_ANIMATING) {
+
+                const anim_class = "class" + ((Math.random() * 10000) | 0);
+                this.CSS_ANIMATING = anim_class;
+
+                this.obj.classList.add(anim_class);
+                let style = document.createElement("style");
+                style.innerHTML = this.toCSSString(anim_class);
+                document.head.appendChild(style);
+                this.style = style;
+
+                setTimeout(this.endCSSAnimation.bind(this), this.duration);
+            }
+        }
+
+        endCSSAnimation() {
+            if (this.CSS_ANIMATING) {
+                this.obj.classList.remove(this.CSS_ANIMATING);
+                this.CSS_ANIMATING = "";
+                this.style.parentElement.removeChild(this.style);
+                this.style = null;
+            }
+        }
     }
 
     class AnimGroup {
@@ -7546,7 +7361,7 @@ const Animation = (function anim() {
         }
 
         scheduledUpdate(a, t) {
-        	this.time += t;
+            this.time += t;
             if (this.run(this.time))
                 spark.queueUpdate(this);
         }
@@ -7598,34 +7413,21 @@ const Animation = (function anim() {
         },
 
         set USE_TRANSFORM(v) { USE_TRANSFORM = !!v; },
-        
+
         get USE_TRANSFORM() { return USE_TRANSFORM; },
-        
+
         easing: {
             linear: Linear,
-            ease: new CBezier(0.25, 0.1, 0.25, 1),
-            ease_in: new CBezier(0.42, 0, 1, 1),
-            ease_out: new CBezier(0.2, 0.8, 0.3, 0.99),
-            ease_in_out: new CBezier(0.42, 0, 0.58, 1),
-            overshoot: new CBezier(0.2, 1.5, 0.2, 0.8)
+            ease: new CSS_Bezier$1(0.25, 0.1, 0.25, 1),
+            ease_in: new CSS_Bezier$1(0.42, 0, 1, 1),
+            ease_out: new CSS_Bezier$1(0.2, 0.8, 0.3, 0.99),
+            ease_in_out: new CSS_Bezier$1(0.42, 0, 0.58, 1),
+            overshoot: new CSS_Bezier$1(0.2, 1.5, 0.2, 0.8)
         }
     };
 })();
 
 const CSS_Transform2D$2 = CSSParser.types.transform2D;
-
-function setToWithTransform(box_a, box_b, seq){
-    const start_width_as_percentage = box_a.width / box_b.width;
-    const start_height_as_percentage = box_a.height / box_b.height;
-    const pos_x_diff = -(box_b.x - box_a.x);
-    const pos_y_diff = -(box_b.y - box_a.y);
-
-    let ATransform = new CSS_Transform2D$2(pos_x_diff, pos_y_diff, start_width_as_percentage, start_height_as_percentage, 0);
-    let BTransform = new CSS_Transform2D$2(0, 0, 1, 1, 0);
-
-    seq.props.transform.keys[0].val = ATransform;
-    seq.props.transform.keys[1].val = BTransform;
-}
 
 function setTo(to, seq, duration, easing, from){
 
@@ -7645,13 +7447,69 @@ function setTo(to, seq, duration, easing, from){
     //Use width and height a per
 
     {
-        setToWithTransform(from_rect, rect, seq);
-        //left.keys[0].val = new left.type(start_left, "px");
-        //left.keys[1].val = new left.type(final_left,"px");
-        seq.props.transform.keys[1].dur = duration;
-        seq.props.transform.keys[1].len = duration;
-        seq.props.transform.keys[1].ease = easing;
-        seq.props.transform.duration = duration;
+        ////////////////////// LEFT ////////////////////// 
+
+        const left = seq.props.left;
+        let start_left = 0, final_left = 0, abs_diff = 0;
+
+        abs_diff = (left.keys[0].val - rect.left);
+
+        if(pos== "relative"){
+            //get existing offset 
+            const left = parseFloat(cs.getPropertyValue("left")) || 0;
+
+            start_left = abs_diff +left;
+            final_left = left;
+        }else{
+            start_left = to.offsetLeft + abs_diff;
+            final_left = to.offsetLeft;
+        }
+
+        left.keys[0].val = new left.type(start_left, "px");
+        left.keys[1].val = new left.type(final_left,"px");
+        left.keys[1].dur = duration;
+        left.keys[1].len = duration;
+        left.keys[1].ease = easing;
+        left.duration = duration;
+
+        ////////////////////// TOP ////////////////////// 
+        const top = seq.props.top;
+        let start_top = 0, final_top = 0;
+
+        abs_diff = (top.keys[0].val - rect.top);
+
+        if(pos== "relative"){
+             const top = parseFloat(cs.getPropertyValue("top")) || 0;
+            start_top = abs_diff + top;
+            final_top = top;
+        }else{
+            start_top = to.offsetTop + abs_diff;
+            final_top = to.offsetTop;
+        }
+
+        top.keys[0].val = new top.type(start_top, "px");
+        top.keys[1].val = new top.type(final_top,"px");
+        top.keys[1].dur = duration;
+        top.keys[1].len = duration;
+        top.keys[1].ease = easing;
+        top.duration = duration;
+
+        ////////////////////// WIDTH ////////////////////// 
+
+        seq.props.width.keys[0].val = new seq.props.width.type(to_width);
+        seq.props.width.keys[0].dur = duration;
+        seq.props.width.keys[0].len = duration;
+        seq.props.width.keys[0].ease = easing;
+        seq.props.width.duration = duration;
+
+        ////////////////////// HEIGHT ////////////////////// 
+
+        seq.props.height.keys[0].val = new seq.props.height.type(to_height);
+        seq.props.height.keys[0].dur = duration;
+        seq.props.height.keys[0].len = duration; 
+        seq.props.height.keys[0].ease = easing; 
+        seq.props.height.duration = duration;
+
     }
         to.style.transformOrigin = "top left";
 
@@ -7673,6 +7531,8 @@ function setTo(to, seq, duration, easing, from){
 
     seq.obj = to;
 
+
+
     seq.addEventListener("stopped", ()=>{
         seq.unsetProps();
     });
@@ -7689,13 +7549,13 @@ function TransformTo(element_from, element_to, duration = 500, easing = Animatio
 
     let seq = Animation.createSequence({
         obj: element_from,
-        transform: [{value:"translate(0,0)"},{value:"translate(0,0)"}],
-        //width: { value: "0px"},
-        //height: { value: "0px"},
+        // /transform: [{value:"translate(0,0)"},{value:"translate(0,0)"}],
+        width: { value: "0px"},
+        height: { value: "0px"},
         backgroundColor: { value: "rgb(1,1,1)"},
         color: { value: "rgb(1,1,1)"},
-        //left: [{value:rect.left+"px"},{ value: "0px"}],
-        //top: [{value:rect.top+"px"},{ value: "0px"}]
+        left: [{value:rect.left+"px"},{ value: "0px"}],
+        top: [{value:rect.top+"px"},{ value: "0px"}]
     });
 
     if (!element_to) {
@@ -7703,6 +7563,7 @@ function TransformTo(element_from, element_to, duration = 500, easing = Animatio
         let a = (seq) => (element_to, duration = 500, easing = Animation.easing.linear,  HIDE_OTHER = false) => {
             setTo(element_to, seq, duration, easing, element_from);
             seq.duration = duration;
+        console.log(seq.toCSSString("MumboJumbo"));
             return seq;
         };
 
@@ -7839,13 +7700,18 @@ const Transitioneer = (function() {
 
         start(time = 0, speed = 1, reverse = false) {
 
+            for (let i = 0; i < this.in_seq.length; i++) {
+                let seq = this.in_seq[i];
+                seq.beginCSSAnimation();
+            }
+
             this.time = time;
             this.speed = Math.abs(speed);
             this.reverse = reverse;
 
             if (this.reverse)
                 this.speed = -this.speed;
-
+            return
             return new Promise((res, rej) => {
                 if (this.duration > 0)
                     this.scheduledUpdate(0, 0);
@@ -7864,6 +7730,7 @@ const Transitioneer = (function() {
 
         stop() {
             this.PLAY = false;
+            //There may be a need to kill any existing CSS based animations
         }
 
         step(t) {
@@ -7873,7 +7740,6 @@ const Transitioneer = (function() {
                     seq.issueEvent("stopped");
                     seq.FINISHED = true;
                 }
-
             }
 
             t = Math.max(t - this.in_delay, 0);

@@ -1,4 +1,3 @@
-import { CBezier } from "@candlefw/math";
 import Spark from "@candlefw/spark";
 import css from "@candlefw/css";
 
@@ -7,6 +6,7 @@ const CSS_Percentage = css.types.percentage;
 const CSS_Color = css.types.color;
 const CSS_Transform2D = css.types.transform2D;
 const CSS_Path = css.types.path;
+const CSS_Bezier = css.types.cubic_bezier;
 
 const Animation = (function anim() {
     var USE_TRANSFORM = false;
@@ -24,7 +24,7 @@ const Animation = (function anim() {
         return JS_OBJECT;
     }
 
-    const Linear = { getYatX: x => x };
+    const Linear = { getYatX: x => x, toString:()=>"linear" };
 
     /**
      * Class to linearly interpolate number.
@@ -121,11 +121,11 @@ const Animation = (function anim() {
             return own_key.val;
         }
 
-        run(obj, prop_name, time, type) {
+        getValueAtTime(time = 0) {
             let val_start = this.current_val,
                 val_end = this.current_val,
-                key, val_out = val_start,
-                in_range = time < this.duration;
+                key, val_out = val_start;
+
 
             for (let i = 0; i < this.keys.length; i++) {
                 key = this.keys[i];
@@ -152,9 +152,13 @@ const Animation = (function anim() {
                 }
             }
 
-            this.setProp(obj, prop_name, val_out, type);
+            return val_out;
+        }
 
-            return in_range;
+        run(obj, prop_name, time, type) {
+            const val_out = this.getValueAtTime(time);
+            this.setProp(obj, prop_name, val_out, type);
+            return time < this.duration;
         }
 
         setProp(obj, prop_name, value, type) {
@@ -165,8 +169,13 @@ const Animation = (function anim() {
                 obj[prop_name] = value;
         }
 
-        unsetProp(obj, prop_name){
+        unsetProp(obj, prop_name) {
             this.setProp(obj, prop_name, "", CSS_STYLE)
+        }
+
+        toCSSString(time = 0, prop_name = "") {
+            const value = this.getValueAtTime(time);
+            return `${prop_name}:${value.toString()}`;
         }
     }
 
@@ -179,10 +188,11 @@ const Animation = (function anim() {
         constructor(obj, props) {
             this.duration = 0;
             this.time = 0;
-            this.type = setType(obj);
             this.obj = null;
+            this.type = setType(obj);
             this.DESTROYED = false;
             this.FINISHED = false;
+            this.CSS_ANIMATING = false;
             this.events = {};
 
             switch (this.type) {
@@ -224,7 +234,7 @@ const Animation = (function anim() {
             }
         }
 
-        unsetProps(props){
+        unsetProps(props) {
             for (let name in this.props)
                 this.props[name].unsetProp(this.obj, name);
         }
@@ -308,6 +318,59 @@ const Animation = (function anim() {
             if (events)
                 events.forEach(e => e(this));
         }
+
+        toCSSString(keyfram_id) {
+
+            const easing = "linear";
+
+            const strings = [`.${keyfram_id}{animation:${keyfram_id} ${this.duration}ms ${Animation.easing.ease_out.toString()}}`, `@keyframes ${keyfram_id}{`];
+
+            // TODO: Use some function to determine the number of steps that should be taken
+            // This should reflect the different keyframe variations that can occure between
+            // properties.
+            // For now, just us an arbitrary number
+
+            const len = 2;
+            const len_m_1 = len - 1;
+            for (let i = 0; i < len; i++) {
+
+                strings.push(`${Math.round((i/len_m_1)*100)}%{`)
+
+                for (let name in this.props)
+                    strings.push(this.props[name].toCSSString((i / len_m_1) * this.duration, name.replace(/([A-Z])/g, (match, p1)=>"-"+match.toLowerCase())) + ";");
+
+                strings.push("}")
+            }
+
+            strings.push("}");
+
+            return strings.join("\n");
+        }
+
+        beginCSSAnimation() {
+            if (!this.CSS_ANIMATING) {
+
+                const anim_class = "class" + ((Math.random() * 10000) | 0);
+                this.CSS_ANIMATING = anim_class;
+
+                this.obj.classList.add(anim_class);
+                let style = document.createElement("style");
+                style.innerHTML = this.toCSSString(anim_class);
+                document.head.appendChild(style);
+                this.style = style;
+
+                setTimeout(this.endCSSAnimation.bind(this), this.duration);
+            }
+        }
+
+        endCSSAnimation() {
+            if (this.CSS_ANIMATING) {
+                this.obj.classList.remove(this.CSS_ANIMATING)
+                this.CSS_ANIMATING = "";
+                this.style.parentElement.removeChild(this.style);
+                this.style = null;
+            }
+        }
     }
 
     class AnimGroup {
@@ -340,7 +403,7 @@ const Animation = (function anim() {
         }
 
         scheduledUpdate(a, t) {
-        	this.time += t
+            this.time += t
             if (this.run(this.time))
                 Spark.queueUpdate(this);
         }
@@ -392,16 +455,16 @@ const Animation = (function anim() {
         },
 
         set USE_TRANSFORM(v) { USE_TRANSFORM = !!v; },
-        
+
         get USE_TRANSFORM() { return USE_TRANSFORM; },
-        
+
         easing: {
             linear: Linear,
-            ease: new CBezier(0.25, 0.1, 0.25, 1),
-            ease_in: new CBezier(0.42, 0, 1, 1),
-            ease_out: new CBezier(0.2, 0.8, 0.3, 0.99),
-            ease_in_out: new CBezier(0.42, 0, 0.58, 1),
-            overshoot: new CBezier(0.2, 1.5, 0.2, 0.8)
+            ease: new CSS_Bezier(0.25, 0.1, 0.25, 1),
+            ease_in: new CSS_Bezier(0.42, 0, 1, 1),
+            ease_out: new CSS_Bezier(0.2, 0.8, 0.3, 0.99),
+            ease_in_out: new CSS_Bezier(0.42, 0, 0.58, 1),
+            overshoot: new CSS_Bezier(0.2, 1.5, 0.2, 0.8)
         }
     };
 })();

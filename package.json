@@ -4,7 +4,8 @@
   "description": "Animation Library",
   "main": "source/glow.mjs",
   "scripts": {
-    "test": "mocha -r esm",
+    "test": "mocha test/test.js -r esm ",
+    "test.watch": "mocha test/test.js -r esm --watch",
     "build": "rollup --config ./build/config/main.config.js",
     "build.watch": "rollup --config ./build/config/main.config.js --watch",
     "prepare": "npm run build"

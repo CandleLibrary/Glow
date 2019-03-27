@@ -323,7 +323,7 @@ const
 
                 const easing = "linear";
 
-                const strings = [`.${keyfram_id}{animation:${keyfram_id} ${this.duration}ms ${Animation.easing.ease_out.toString()}}`, `@keyframes ${keyfram_id}{`];
+                const strings = [`.${keyfram_id}{animation:${keyfram_id} ${this.duration}ms ${Animation.ease_out.toString()}}`, `@keyframes ${keyfram_id}{`];
 
                 // TODO: Use some function to determine the number of steps that should be taken
                 // This should reflect the different keyframe variations that can occure between

@@ -137,7 +137,7 @@ function setTo(to, seq, duration, easing, from){
     Transform one element from another back to itself
     @alias module:wick~internals.TransformTo
 */
-export function TransformTo(element_from, element_to, duration = 500, easing = Animation.easing.linear, HIDE_OTHER = false) {
+export function TransformTo(element_from, element_to, duration = 500, easing = Animation.linear, HIDE_OTHER = false) {
     let rect = element_from.getBoundingClientRect();
     let cs = window.getComputedStyle(element_from, null);
     let margin_left = parseFloat(cs.getPropertyValue("margin"));
@@ -155,7 +155,7 @@ export function TransformTo(element_from, element_to, duration = 500, easing = A
 
     if (!element_to) {
 
-        let a = (seq) => (element_to, duration = 500, easing = Animation.easing.linear,  HIDE_OTHER = false) => {
+        let a = (seq) => (element_to, duration = 500, easing = Animation.linear,  HIDE_OTHER = false) => {
             setTo(element_to, seq, duration, easing, element_from);
             seq.duration = duration;
         console.log(seq.toCSSString("MumboJumbo"))

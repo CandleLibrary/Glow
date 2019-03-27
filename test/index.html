@@ -33,9 +33,9 @@
 	const a = document.getElementById("a");
 	const b = document.getElementById("b");
 	glow.USE_TRANSFORM = true;
-	let trs = glow.Transitioneer.createTransition()
+	let trs = glow.createTransition()
 	trs.out({obj:a,match:"double", duration:600}, 1000);
-	trs.in({obj:b,match:"double", duration:1450, delay:300, easing:glow.default.easing.ease_out, USE_TRANSFORM:true},600, 300);
+	trs.in({obj:b,match:"double", duration:1450, delay:300, easing:glow.ease_out, USE_TRANSFORM:true},600, 300);
 	trs.start();
 
 </script>

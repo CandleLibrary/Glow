@@ -8,12 +8,12 @@ export default {
     	name:"glow",
         file: "./build/glow.node.js",
         format: "cjs",
-        exports:"named"
+        exports:"default"
     }, {
     	name:"glow",
         file: "./build/glow.js",
         format: "iife",
-        exports:"named"
+        exports:"default"
     }],
     plugins: [commonjs({ include: ['./node_modules/*.*'] }), resolve()]
 };

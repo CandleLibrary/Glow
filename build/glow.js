@@ -1,4 +1,4 @@
-var glow = (function (exports) {
+var glow = (function () {
     'use strict';
 
     /**
@@ -941,7 +941,7 @@ var glow = (function (exports) {
         /**
         Creates and error message with a diagrame illustrating the location of the error. 
         */
-        errorMessage(message = ""){
+        errorMessage(message = "") {
             const arrow = String.fromCharCode(0x2b89),
                 trs = String.fromCharCode(0x2500),
                 line = String.fromCharCode(0x2500),
@@ -972,7 +972,7 @@ ${is_iws}`;
          */
         throw (message, DEFER = false) {
             const error = new Error(this.errorMessage(message));
-            if(DEFER)
+            if (DEFER)
                 return error;
             throw error;
         }
@@ -1047,101 +1047,132 @@ ${is_iws}`;
                 return marker;
             }
 
-            for (;;) {
+            const USE_CUSTOM_SYMBOLS = !!this.symbol_map;
+            let NORMAL_PARSE = true;
 
-                base = off;
+            if (USE_CUSTOM_SYMBOLS) {
 
-                length = 1;
+                let code = str.charCodeAt(off);
+                let off2 = off;
+                let map = this.symbol_map,
+                    m$$1;
 
-                const code = str.charCodeAt(off);
+                while(code == 32 && IWS)
+                    (code = str.charCodeAt(++off2), off++);
 
-                if (code < 128) {
+                while ((m$$1 = map.get(code))) {
+                    map = m$$1;
+                    off2 += 1;
+                    code = str.charCodeAt(off2);
+                }
 
-                    switch (jump_table[code]) {
-                        case 0: //NUMBER
-                            while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)])) ;
+                if (map.IS_SYM) {
+                   NORMAL_PARSE = false;
+                   base = off;
+                   length = off2 - off;
+                   char += length;
+                }
+            }
 
-                            if (str[off] == "e" || str[off] == "E") {
-                                off++;
-                                if (str[off] == "-") off++;
-                                marker.off = off;
-                                marker.tl = 0;
-                                marker.next();
-                                off = marker.off + marker.tl;
-                                //Add e to the number string
-                            }
+            if (NORMAL_PARSE) {
 
-                            type = number;
-                            length = off - base;
 
-                            break;
-                        case 1: //IDENTIFIER
-                            while (++off < l$$1 && ((10 & number_and_identifier_table[str.charCodeAt(off)]))) ;
-                            type = identifier;
-                            length = off - base;
-                            break;
-                        case 2: //QUOTED STRING
-                            if (this.PARSE_STRING) {
+                for (;;) {
+
+                    base = off;
+
+                    length = 1;
+
+                    const code = str.charCodeAt(off);
+
+                    if (code < 128) {
+
+                        switch (jump_table[code]) {
+                            case 0: //NUMBER
+                                while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)]));
+
+                                if ((str[off] == "e" || str[off] == "E") && (12 & number_and_identifier_table[str.charCodeAt(off+1)])) {
+                                    off++;
+                                    if (str[off] == "-") off++;
+                                    marker.off = off;
+                                    marker.tl = 0;
+                                    marker.next();
+                                    off = marker.off + marker.tl;
+                                    //Add e to the number string
+                                }
+
+                                type = number;
+                                length = off - base;
+
+                                break;
+                            case 1: //IDENTIFIER
+                                while (++off < l$$1 && ((10 & number_and_identifier_table[str.charCodeAt(off)])));
+                                type = identifier;
+                                length = off - base;
+                                break;
+                            case 2: //QUOTED STRING
+                                if (this.PARSE_STRING) {
+                                    type = symbol;
+                                } else {
+                                    while (++off < l$$1 && str.charCodeAt(off) !== code);
+                                    type = string;
+                                    length = off - base + 1;
+                                }
+                                break;
+                            case 3: //SPACE SET
+                                while (++off < l$$1 && str.charCodeAt(off) === SPACE);
+                                type = white_space;
+                                length = off - base;
+                                break;
+                            case 4: //TAB SET
+                                while (++off < l$$1 && str[off] === HORIZONTAL_TAB);
+                                type = white_space;
+                                length = off - base;
+                                break;
+                            case 5: //CARIAGE RETURN
+                                length = 2;
+                                //Intentional
+                            case 6: //LINEFEED
+                                type = new_line;
+                                char = 0;
+                                line++;
+                                off += length;
+                                break;
+                            case 7: //SYMBOL
                                 type = symbol;
-                            } else {
-                                while (++off < l$$1 && str.charCodeAt(off) !== code) ;
-                                type = string;
-                                length = off - base + 1;
-                            }
-                            break;
-                        case 3: //SPACE SET
-                            while (++off < l$$1 && str.charCodeAt(off) === SPACE) ;
-                            type = white_space;
-                            length = off - base;
-                            break;
-                        case 4: //TAB SET
-                            while (++off < l$$1 && str[off] === HORIZONTAL_TAB) ;
-                            type = white_space;
-                            length = off - base;
-                            break;
-                        case 5: //CARIAGE RETURN
-                            length = 2;
-                            //Intentional
-                        case 6: //LINEFEED
-                            type = new_line;
-                            char = 0;
-                            line++;
-                            off += length;
-                            break;
-                        case 7: //SYMBOL
+                                break;
+                            case 8: //OPERATOR
+                                type = operator;
+                                break;
+                            case 9: //OPEN BRACKET
+                                type = open_bracket;
+                                break;
+                            case 10: //CLOSE BRACKET
+                                type = close_bracket;
+                                break;
+                            case 11: //Data Link Escape
+                                type = data_link;
+                                length = 4; //Stores two UTF16 values and a data link sentinel
+                                break;
+                        }
+                    }
+
+                    if (IWS && (type & white_space_new_line)) {
+                        if (off < l$$1) {
+                            char += length;
                             type = symbol;
-                            break;
-                        case 8: //OPERATOR
-                            type = operator;
-                            break;
-                        case 9: //OPEN BRACKET
-                            type = open_bracket;
-                            break;
-                        case 10: //CLOSE BRACKET
-                            type = close_bracket;
-                            break;
-                        case 11: //Data Link Escape
-                            type = data_link;
-                            length = 4; //Stores two UTF16 values and a data link sentinel
-                            break;
+                            continue;
+                        } else {
+                            //Trim white space from end of string
+                            base = l$$1 - length;
+                            marker.sl -= length;
+                            length = 0;
+                            char -= base - off;
+                        }
                     }
-                }
 
-                if (IWS && (type & white_space_new_line)) {
-                    if (off < l$$1) {
-                        char += length;
-                        type = symbol;
-                        continue;
-                    } else {
-                        //Trim white space from end of string
-                        base = l$$1 - length;
-                        marker.sl -= length;
-                        length = 0;
-                        char -= base - off;
-                    }
+                    break;
                 }
-
-                break;
             }
 
             marker.type = type;
@@ -1316,6 +1347,25 @@ ${is_iws}`;
             return lex;
         }
 
+        /** Adds symbol to symbol_map. This allows custom symbols to be defined and tokenized by parser. **/
+        addSymbol(sym) {
+            if (!this.symbol_map)
+                this.symbol_map = new Map;
+
+
+            let map = this.symbol_map;
+
+            for (let i$$1 = 0; i$$1 < sym.length; i$$1++) {
+                let code = sym.charCodeAt(i$$1);
+                let m$$1 = map.get(code);
+                if (!m$$1){
+                    m$$1 = map.set(code, new Map).get(code);
+                }
+                map = m$$1;
+            }
+            map.IS_SYM = true;
+        }
+
         /*** Getters and Setters ***/
         get string() {
             return this.str;
@@ -1402,7 +1452,6 @@ ${is_iws}`;
 
         set type(value) {
             //assuming power of 2 value.
-
             this.masked_values = (this.masked_values & ~TYPE_MASK) | ((getNumbrOfTrailingZeroBitsFromPowerOf2(value)) & TYPE_MASK);
         }
 
@@ -1468,6 +1517,87 @@ ${is_iws}`;
 
     Lexer.types = Types;
     whind$1.types = Types;
+
+    /**
+     * Holds a set of rendered CSS properties.
+     * @memberof module:wick~internals.css
+     * @alias CSSRule
+     */
+    class CSSRule {
+        constructor(root) {
+            /**
+             * Collection of properties held by this rule.
+             * @public
+             */
+            this.props = {};
+            this.LOADED = false;
+            this.root = root;
+
+            //Reference Counting
+            this.refs = 0;
+
+            //Versioning
+            this.ver = 0;
+        }
+
+        incrementRef(){
+            this.refs++;
+        }
+
+        decrementRef(){
+            this.refs--;
+            if(this.refs <= 0){
+                //TODO: remove from rules entries.
+                debugger
+            }
+        }
+
+        addProperty(prop, rule) {
+            if (prop)
+                this.props[prop.name] = prop.value;
+        }
+
+
+
+        toString(off = 0, rule = "") {
+            let str = [],
+                offset = ("    ").repeat(off);
+
+            if (rule) {
+                if (this.props[rule]) {
+                    if (Array.isArray(this.props[rule]))
+                        str.push(this.props[rule].join(" "));
+                    else
+                        str.push(this.props[rule].toString());
+                }else
+                    return "";
+            } else {
+                for (let a in this.props) {
+                    if (this.props[a] !== null) {
+                        if (Array.isArray(this.props[a]))
+                            str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].join(" "), ";\n");
+                        else
+                            str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].toString(), ";\n");
+                    }
+                }
+            }
+
+            return str.join(""); //JSON.stringify(this.props).replace(/\"/g, "").replace(/\_/g, "-");
+        }
+
+        merge(rule) {
+            if (rule.props) {
+                for (let n in rule.props)
+                    this.props[n] = rule.props[n];
+                this.LOADED = true;
+                this.ver++;
+            }
+        }
+
+        get _wick_type_() { return 0; }
+
+        set _wick_type_(v) {}
+    }
 
     class Color extends Float64Array {
 
@@ -1591,12 +1721,29 @@ ${is_iws}`;
     */
     class CSS_Color extends Color {
 
-        constructor(r, g, b, a) {
-            super(r, g, b, a);
+        /** UI FUNCTIONS **/
 
-            if (typeof(r) == "string")
-                this.set(CSS_Color._fs_(r) || {r:255,g:255,b:255,a:0});
+        static list(){}
 
+        static valueHandler(existing_value){
+            let ele = document.createElement("input");
+            ele.type = "color";
+            ele.value = (existing_value) ? existing_value+ "" : "#000000";
+            ele.addEventListener("change", (e)=>{
+                ele.css_value = ele.value;
+            });
+            return ele;
+        }
+
+        static setInput(input, value){
+            input.type = "color";
+            input.value = value;
+        }
+
+        static buildInput(){
+            let ele = document.createElement("input");
+            ele.type = "color";
+            return ele;
         }
 
         static parse(l, rule, r) {
@@ -1604,7 +1751,6 @@ ${is_iws}`;
             let c = CSS_Color._fs_(l);
 
             if (c) {
-                l.next();
 
                 let color = new CSS_Color();
 
@@ -1625,7 +1771,6 @@ ${is_iws}`;
             Creates a new Color from a string or a Lexer.
         */
         static _fs_(l, v = false) {
-
             let c;
 
             if (typeof(l) == "string")
@@ -1635,67 +1780,132 @@ ${is_iws}`;
 
             switch (l.ch) {
                 case "#":
-                    var value = l.next().tx;
-                    let num = parseInt(value,16);
+                    l.next();
+                    let pk = l.copy();
+
+                    let type = l.types;
+                    pk.IWS = false;
+
+
+                    while(!(pk.ty & (type.newline | type.ws)) && !pk.END && pk.ch !== ";"){
+                        pk.next();
+                    }
+
+                    var value = pk.slice(l);
+                    l.sync(pk);
+                    l.tl = 0;
+                    l.next();
                     
-                    out = { r: 0, g: 0, b: 0, a: 1 };
-                    if(value.length == 3){
-                        out.r = (num >> 8) & 0xF;
-                        out.g = (num >> 4) & 0xF;
-                        out.b = (num) & 0xF;
-                    }else{
-                        if(value.length == 6){
-                            out.r = (num >> 16) & 0xFF;
-                            out.g = (num >> 8) & 0xFF;
-                            out.b = (num) & 0xFF;
-                        }if(value.length == 8){
-                            out.r = (num >> 24) & 0xFF;
-                            out.g = (num >> 16) & 0xFF;
-                            out.b = (num >> 8) & 0xFF;
-                            out.a = ((num) & 0xFF);
+                    let num = parseInt(value,16);
+
+                    if(value.length == 3 || value.length == 4){
+                        
+                        if(value.length == 4){
+                            const a = (num >> 8) & 0xF;
+                            out.a = a | a << 4;
+                            num >>= 4;
                         }
+
+                        const r = (num >> 8) & 0xF;
+                        out.r = r | r << 4;
+                        
+                        const g = (num >> 4) & 0xF;
+                        out.g = g | g << 4;
+                        
+                        const b = (num) & 0xF;
+                        out.b = b | b << 4;
+
+                    }else{
+
+                        if(value.length == 8){
+                            out.a = num & 0xFF;
+                            num >>= 8;
+                        }
+
+                        out.r = (num >> 16) & 0xFF;       
+                        out.g = (num >> 8) & 0xFF;
+                        out.b = (num) & 0xFF;
                     }
                     l.next();
                     break;
                 case "r":
                     let tx = l.tx;
-                    if (tx == "rgba") {
-                        out = { r: 0, g: 0, b: 0, a: 1 };
+
+                    const RGB_TYPE = tx === "rgba"  ? 1 : tx === "rgb" ? 2 : 0;
+                    
+                    if(RGB_TYPE > 0){
+
                         l.next(); // (
+                        
                         out.r = parseInt(l.next().tx);
-                        l.next(); // ,
+                        
+                        l.next(); // , or  %
+
+                        if(l.ch == "%"){
+                            l.next(); out.r = out.r * 255 / 100;
+                        }
+                        
+                        
                         out.g = parseInt(l.next().tx);
-                        l.next(); // ,
+                        
+                        l.next(); // , or  %
+                       
+                        if(l.ch == "%"){
+                            l.next(); out.g = out.g * 255 / 100;
+                        }
+                        
+                        
                         out.b = parseInt(l.next().tx);
-                        l.next(); // ,
-                        out.a = parseFloat(l.next().tx);
-                        l.next();
+                        
+                        l.next(); // , or ) or %
+                        
+                        if(l.ch == "%")
+                            l.next(), out.b = out.b * 255 / 100;
+
+                        if(RGB_TYPE < 2){
+                            out.a = parseFloat(l.next().tx);
+
+                            l.next();
+                            
+                            if(l.ch == "%")
+                                l.next(), out.a = out.a * 255 / 100;
+                        }
+
+                        l.a(")");
                         c = new CSS_Color();
                         c.set(out);
                         return c;
-                    } else if (tx == "rgb") {
-                        out = { r: 0, g: 0, b: 0, a: 1 };
-                        l.next(); // (
-                        out.r = parseInt(l.next().tx);
-                        l.next(); // ,
-                        out.g = parseInt(l.next().tx);
-                        l.next(); // ,
-                        out.b = parseInt(l.next().tx);
-                        l.next();
-                        c = new CSS_Color();
-                        c.set(out);
-                        return c;
-                    } // intentional
+                    }  // intentional
                 default:
+
                     let string = l.tx;
 
-                    if (l.ty == l.types.str)
+                    if (l.ty == l.types.str){
                         string = string.slice(1, -1);
+                    }
 
                     out = CSS_Color.colors[string.toLowerCase()];
+
+                    if(out)
+                        l.next();
             }
 
             return out;
+        }
+
+        constructor(r, g, b, a) {
+            super(r, g, b, a);
+
+            if (typeof(r) == "string")
+                this.set(CSS_Color._fs_(r) || {r:255,g:255,b:255,a:0});
+
+        }
+
+        toString(){
+            return `#${("0"+this.r.toString(16)).slice(-2)}${("0"+this.g.toString(16)).slice(-2)}${("0"+this.b.toString(16)).slice(-2)}`
+        }
+        toRGBString(){
+            return `rgba(${this.r.toString()},${this.g.toString()},${this.b.toString()},${this.a.toString()})`   
         }
     } {
 
@@ -1849,6 +2059,20 @@ ${is_iws}`;
     }
 
     class CSS_Percentage extends Number {
+        static setInput(input, value){
+            input.type = "number";
+            input.value = parseFloat(value);
+        }
+
+        static buildInput(value){
+            let ele = document.createElement("input");
+            ele.type = "number";
+            ele.value = parseFloat(value) || 0;
+            ele.addEventListener("change", (e)=>{
+                ele.css_value = ele.value + "%";
+            });
+            return ele;
+        }
         
         static parse(l, rule, r) {
             let tx = l.tx,
@@ -1871,6 +2095,19 @@ ${is_iws}`;
             return null;
         }
 
+        static _verify_(l) {
+            if(typeof(l) == "string" &&  !isNaN(parseInt(l)) && l.includes("%"))
+                return true;
+            return false;
+        }
+
+        static valueHandler(){
+            let ele = document.createElement("input");
+            ele.type = "number";
+            ele.value = 100;
+            return ele;
+        }
+
         constructor(v) {
 
             if (typeof(v) == "string") {
@@ -1881,12 +2118,6 @@ ${is_iws}`;
             }
             
             super(v);
-        }
-
-        static _verify_(l) {
-            if(typeof(l) == "string" &&  !isNaN(parseInt(l)) && l.includes("%"))
-                return true;
-            return false;
         }
 
         toJSON() {
@@ -1914,21 +2145,50 @@ ${is_iws}`;
         }
     }
 
+    CSS_Percentage.label_name = "Percentage";
+
     class CSS_Length extends Number {
+
+        static valueHandler(value, ui_seg){
+            let ele = document.createElement("input");
+
+
+            ele.type = "number";
+            ele.value = (value) ? value + 0 : 0;
+            
+            ui_seg.css_value = ele.value + "%";
+            
+            ele.addEventListener("change", (e)=>{
+                ele.css_value = ele.value + "px";
+            });
+            return ele;
+        }
+
+        static setInput(input, value){
+            input.type = "number";
+            input.value = value;
+        }
+
+        static buildInput(){
+            let ele = document.createElement("input");
+            ele.type = "number";
+            return ele;
+        }
+
         static parse(l, rule, r) {
             let tx = l.tx,
                 pky = l.pk.ty;
             if (l.ty == l.types.num || tx == "-" && pky == l.types.num) {
-                let mult = 1;
+                let sign = 1;
                 if (l.ch == "-") {
-                    mult = -1;
+                    sign = -1;
                     tx = l.p.tx;
                     l.p.next();
                 }
                 if (l.p.ty == l.types.id) {
                     let id = l.sync().tx;
                     l.next();
-                    return new CSS_Length(parseFloat(tx) * mult, id);
+                    return new CSS_Length(parseFloat(tx) * sign, id);
                 }
             }
             return null;
@@ -2686,7 +2946,7 @@ ${is_iws}`;
                     v = l.tx.slice(1,-1);
                     l.next().a(")");
                 } else {
-                    let p = l.p;
+                    const p = l.peek();
                     while (!p.END && p.next().tx !== ")") { /* NO OP */ }
                     v = p.slice(l);
                     l.sync().a(")");
@@ -2703,6 +2963,27 @@ ${is_iws}`;
     }
 
     class CSS_String extends String {
+        
+        static list(){}
+
+        static valueHandler(existing_value){
+            let ele = document.createElement("input");
+            ele.type = "text";
+            ele.value = existing_value || "";
+            return ele;
+        }
+
+        static setInput(input, value){
+            input.type = "text";
+            input.value = value;
+        }
+
+        static buildInput(){
+            let ele = document.createElement("input");
+            ele.type = "text";
+            return ele;
+        }
+
         static parse(l, rule, r) {
             if (l.ty == l.types.str) {
                 let tx = l.tx;
@@ -2710,6 +2991,12 @@ ${is_iws}`;
                 return new CSS_String(tx);
             }
             return null;
+        }
+
+        constructor(string){
+            if(string[0] == "\"" || string[0] == "\'" || string[0] == "\'")
+                string = string.slice(1,-1);
+            super(string);
         }
     }
 
@@ -2727,14 +3014,14 @@ ${is_iws}`;
     /* https://www.w3.org/TR/css-shapes-1/#typedef-basic-shape */
     class CSS_Shape extends Array {
         static parse(l, rule, r) {
-            if (l.tx == "inset" || l.tx == "circle" || l.tx == "ellipse" || l.tx == "polygon") {
+            if (l.tx == "inset" || l.tx == "circle" || l.tx == "ellipse" || l.tx == "polygon" || l.tx == "rect") {
                 l.next().a("(");
                 let v = "";
                 if (l.ty == l.types.str) {
                     v = l.tx.slice(1,-1);
                     l.next().a(")");
                 } else {
-                    let p = l.p;
+                    let p = l.pk;
                     while (!p.END && p.next().tx !== ")") { /* NO OP */ }
                     v = p.slice(l);
                     l.sync().a(")");
@@ -2746,11 +3033,41 @@ ${is_iws}`;
     }
 
     class CSS_Number extends Number {
+
+        static valueHandler(value){
+            let ele = document.createElement("input");
+            ele.type = "number";
+            ele.value = (value) ? value + 0 : 0;
+            ele.addEventListener("change", (e)=>{
+                ele.css_value = ele.value;
+            });
+            return ele;
+        }
+
+        static setInput(input, value){
+            input.type = "number";
+            input.value = value;
+        }
+
+        static buildInput(){
+            let ele = document.createElement("input");
+            ele.type = "number";
+            return ele;
+        }
+
         static parse(l, rule, r) {
-            let tx = l.tx;
+            
+            let sign = 1;
+
+            if(l.ch == "-" && l.pk.ty == l.types.num){
+            	l.sync();
+            	sign = -1;
+            }
+
             if(l.ty == l.types.num){
+            	let tx = l.tx;
                 l.next();
-                return new CSS_Number(tx);
+                return new CSS_Number(sign*(new Number(tx)));
             }
             return null;
         }
@@ -3047,6 +3364,10 @@ ${is_iws}`;
 
     		return out;
     	}
+
+    	toString(){
+    		 return `cubic-bezier(${this[2]},${this[3]},${this[4]},${this[5]})`;
+    	}
     }
 
     class Stop{
@@ -3193,7 +3514,11 @@ ${is_iws}`;
     }
 
     function ParseString(string, transform) {
-        var lex = whind$1(string);
+        let lex = null;
+        lex = string;
+
+        if(typeof(string) == "string")
+            lex = whind$1(string);
         
         while (!lex.END) {
             let tx = lex.tx;
@@ -3315,7 +3640,7 @@ ${is_iws}`;
             super(5);
             this.sx = 1;
             this.sy = 1;
-            if (px) {
+            if (px !== undefined) {
                 if (px instanceof CSS_Transform2D) {
                     this[0] = px[0];
                     this[1] = px[1];
@@ -3659,45 +3984,74 @@ ${is_iws}`;
         }	
     }
 
+    class CSS_FontName extends String {
+    	static parse(l, rule, r) {
+
+    		if(l.ty == l.types.str){
+    			let tx = l.tx;
+                l.next();
+    			return new CSS_String(tx);
+    		}		
+
+    		if(l.ty == l.types.id){
+
+    			let pk = l.peek();
+
+    			while(pk.type == l.types.id && !pk.END){
+    				pk.next();
+    			}
+
+    			let str = pk.slice(l);
+    			
+    			l.sync();
+    			return new CSS_String(str);
+    		}
+
+            return null;
+        }
+    }
+
     /**
      * CSS Type constructors
      * @alias module:wick~internals.css.types.
      * @enum {object}
+     * https://www.w3.org/TR/CSS2/about.html#property-defs
      */
     const types = {
-        color: CSS_Color,
-        length: CSS_Length,
-        time: CSS_Length,
-        flex: CSS_Length,
-        angle: CSS_Length,
-        frequency: CSS_Length,
-        resolution: CSS_Length,
-        percentage: CSS_Percentage,
-        url: CSS_URL,
-        uri: CSS_URL,
-        number: CSS_Number,
-        id: CSS_Id,
-        string: CSS_String,
-        shape: CSS_Shape,
-        cubic_bezier: CSS_Bezier,
-        integer: CSS_Number,
-        gradient: CSS_Gradient,
-        transform2D : CSS_Transform2D,
-        path: CSS_Path,
+    	color: CSS_Color,
+    	length: CSS_Length,
+    	time: CSS_Length,
+    	flex: CSS_Length,
+    	angle: CSS_Length,
+    	frequency: CSS_Length,
+    	resolution: CSS_Length,
+    	percentage: CSS_Percentage,
+    	url: CSS_URL,
+    	uri: CSS_URL,
+    	number: CSS_Number,
+    	id: CSS_Id,
+    	string: CSS_String,
+    	shape: CSS_Shape,
+    	cubic_bezier: CSS_Bezier,
+    	integer: CSS_Number,
+    	gradient: CSS_Gradient,
+    	transform2D : CSS_Transform2D,
+    	path: CSS_Path,
+    	fontname: CSS_FontName,
 
-        /* Media parsers */
-        m_width: CSS_Media_handle("w", 0),
-        m_min_width: CSS_Media_handle("w", 1),
-        m_max_width: CSS_Media_handle("w", 2),
-        m_height: CSS_Media_handle("h", 0),
-        m_min_height: CSS_Media_handle("h", 1),
-        m_max_height: CSS_Media_handle("h", 2),
-        m_device_width: CSS_Media_handle("dw", 0),
-        m_min_device_width: CSS_Media_handle("dw", 1),
-        m_max_device_width: CSS_Media_handle("dw", 2),
-        m_device_height: CSS_Media_handle("dh", 0),
-        m_min_device_height: CSS_Media_handle("dh", 1),
-        m_max_device_height: CSS_Media_handle("dh", 2)
+    	/* Media parsers */
+    	m_width: CSS_Media_handle("w", 0),
+    	m_min_width: CSS_Media_handle("w", 1),
+    	m_max_width: CSS_Media_handle("w", 2),
+    	m_height: CSS_Media_handle("h", 0),
+    	m_min_height: CSS_Media_handle("h", 1),
+    	m_max_height: CSS_Media_handle("h", 2),
+    	m_device_width: CSS_Media_handle("dw", 0),
+    	m_min_device_width: CSS_Media_handle("dw", 1),
+    	m_max_device_width: CSS_Media_handle("dw", 2),
+    	m_device_height: CSS_Media_handle("dh", 0),
+    	m_min_device_height: CSS_Media_handle("dh", 1),
+    	m_max_device_height: CSS_Media_handle("dh", 2)
     };
 
     /**
@@ -3706,291 +4060,406 @@ ${is_iws}`;
      * @enum {string}
      */
     const property_definitions = {
-        //https://www.w3.org/TR/2018/REC-css-color-3-20180619//
-        
-        color: `<color>`,
 
-        opacity: `<alphavalue>|inherit`,
+    	/* https://drafts.csswg.org/css-writing-modes-3/ */
+    		direction:"ltr|rtl",
+    		unicode_bidi:"normal|embed|isolate|bidi-override|isolate-override|plaintext",
+    		writing_mode:"horizontal-tb|vertical-rl|vertical-lr",
+    		text_orientation:"mixed|upright|sideways",
+    		glyph_orientation_vertical:`auto|0deg|90deg|"0"|"90"`,
+    		text_combine_upright:"none|all",
+
+    	/* https://www.w3.org/TR/css-position-3 */ 
+    		position: "static|relative|absolute|sticky|fixed",
+    		top: `<length>|<percentage>|auto`,
+    		left: `<length>|<percentage>|auto`,
+    		bottom: `<length>|<percentage>|auto`,
+    		right: `<length>|<percentage>|auto`,
+    		offset_before: `<length>|<percentage>|auto`,
+    		offset_after: `<length>|<percentage>|auto`,
+    		offset_start: `<length>|<percentage>|auto`,
+    		offset_end: `<length>|<percentage>|auto`,
+    		z_index:"auto|<integer>",
+
+    	/* https://www.w3.org/TR/css-display-3/ */
+    		display: `[ <display_outside> || <display_inside> ] | <display_listitem> | <display_internal> | <display_box> | <display_legacy>`,
+
+    	/* https://www.w3.org/TR/css-box-3 */
+    		margin: `[<length>|<percentage>|0|auto]{1,4}`,
+    		margin_top: `<length>|<percentage>|0|auto`,
+    		margin_right: `<length>|<percentage>|0|auto`,
+    		margin_bottom: `<length>|<percentage>|0|auto`,
+    		margin_left: `<length>|<percentage>|0|auto`,
+
+    		margin_trim:"none|in-flow|all",
+
+    		padding: `[<length>|<percentage>|0|auto]{1,4}`,
+    		padding_top: `<length>|<percentage>|0|auto`,
+    		padding_right: `<length>|<percentage>|0|auto`,
+    		padding_bottom: `<length>|<percentage>|0|auto`,
+    		padding_left: `<length>|<percentage>|0|auto`,
+
+    	/* https://www.w3.org/TR/CSS2/visuren.html */
+    		float: `left|right|none`,
+    		clear: `left|right|both|none`,
+
+    	/* https://drafts.csswg.org/css-sizing-3 todo:implement fit-content(%) function */
+    		box_sizing: `content-box | border-box`,
+    		width: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+    		height: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+    		min_width: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+    		max_width: `<length>|<percentage>|min-content|max-content|fit-content|auto|none`,
+    		min_height: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+    		max_height: `<length>|<percentage>|min-content|max-content|fit-content|auto|none`,
+
+    	/* https://www.w3.org/TR/2018/REC-css-color-3-20180619 */
+    		color: `<color>`,
+    		opacity: `<alphavalue>`,
+
+    	/* https://www.w3.org/TR/css-backgrounds-3/ */
+    		background_color: `<color>`,
+    		background_image: `<bg_image>#`,
+    		background_repeat: `<repeat_style>#`,
+    		background_attachment: `scroll|fixed|local`,
+    		background_position: `[<percentage>|<length>]{1,2}|[top|center|bottom]||[left|center|right]`,
+    		background_clip: `<box>#`,
+    		background_origin: `<box>#`,
+    		background_size: `<bg_size>#`,
+    		background: `[<bg_layer>#,]?<final_bg_layer>`,
+    		border_color: `<color>{1,4}`,
+    		border_top_color: `<color>`,
+    		border_right_color: `<color>`,
+    		border_bottom_color: `<color>`,
+    		border_left_color: `<color>`,
+
+    		border_top_width: `<line_width>`,
+    		border_right_width: `<line_width>`,
+    		border_bottom_width: `<line_width>`,
+    		border_left_width: `<line_width>`,
+    		border_width: `<line_width>{1,4}`,
+
+    		border_style: `<line_style>{1,4}`,
+    		border_top_style: `<line_style>`,
+    		border_right_style: `<line_style>`,
+    		border_bottom_style: `<line_style>`,
+    		border_left_style: `<line_style>`,
+
+    		border_top: `<line_width>||<line_style>||<color>`,
+    		border_right: `<line_width>||<line_style>||<color>`,
+    		border_bottom: `<line_width>||<line_style>||<color>`,
+    		border_left: `<line_width>||<line_style>||<color>`,
+
+    		border_radius: `<length_percentage>{1,4}[ / <length_percentage>{1,4}]?`,
+    		border_top_left_radius: `<length_percentage>{1,2}`,
+    		border_top_right_radius: `<length_percentage>{1,2}`,
+    		border_bottom_right_radius: `<length_percentage>{1,2}`,
+    		border_bottom_left_radius: `<length_percentage>{1,2}`,
+
+    		border: `<line_width>||<line_style>||<color>`,
+
+    		border_image: `<border_image_source>||<border_image_slice>[/<border_image_width>|/<border_image_width>?/<border_image_outset>]?||<border_image_repeat>`,
+    		border_image_source: `none|<image>`,
+    		border_image_slice: `[<number>|<percentage>]{1,4}&&fill?`,
+    		border_image_width: `[<length_percentage>|<number>|auto]{1,4}`,
+    		border_image_outset: `[<length>|<number>]{1,4}`,
+    		border_image_repeat: `[stretch|repeat|round|space]{1,2}`,
+    		box_shadow: `none|<shadow>#`,
+    		line_height: `normal|<percentage>|<length>|<number>`,
+    		overflow: 'visible|hidden|scroll|auto',
+
+    	/* https://www.w3.org/TR/css-fonts-4 */
+    		font_display: "auto|block|swap|fallback|optional",
+    		font_family: `[[<generic_family>|<family_name>],]*[<generic_family>|<family_name>]`,
+    		font_language_override:"normal|<string>",
+    		font: `[[<font_style>||<font_variant>||<font_weight>]?<font_size>[/<line_height>]?<font_family>]|caption|icon|menu|message-box|small-caption|status-bar`,
+    		font_max_size: `<absolute_size>|<relative_size>|<length>|<percentage>|infinity`,
+    		font_min_size: `<absolute_size>|<relative_size>|<length>|<percentage>`,
+    		font_optical_sizing: `auto|none`,
+    		font_pallette: `normal|light|dark|<identifier>`,
+    		font_size: `<absolute_size>|<relative_size>|<length>|<percentage>`,
+    		font_stretch:"<percentage>|normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded",
+    		font_style: `normal|italic|oblique<angle>?`,
+    		font_synthesis:"none|[weight||style]",
+    		font_synthesis_small_caps:"auto|none",
+    		font_synthesis_style:"auto|none",
+    		font_synthesis_weight:"auto|none",
+    		font_variant_alternates:"normal|[stylistic(<feature-value-name>)||historical-forms||styleset(<feature-value-name>#)||character-variant(<feature-value-name>#)||swash(<feature-value-name>)||ornaments(<feature-value-name>)||annotation(<feature-value-name>)]",
+    		font_variant_emoji:"auto|text|emoji|unicode",
+    		font_variation_settings:" normal|[<string><number>]#",
+    		font_size_adjust: `<number>|none`,
+    		
+    		font_weight: `normal|bold|bolder|lighter|100|200|300|400|500|600|700|800|900`,
+
+    	/* https://www.w3.org/TR/css-fonts-3/ */
+    		font_kerning: ` auto | normal | none`,
+    		font_variant: `normal|none|[<common-lig-values>||<discretionary-lig-values>||<historical-lig-values>||<contextual-alt-values>||[small-caps|all-small-caps|petite-caps|all-petite-caps|unicase|titling-caps]||<numeric-figure-values>||<numeric-spacing-values>||<numeric-fraction-values>||ordinal||slashed-zero||<east-asian-variant-values>||<east-asian-width-values>||ruby||[sub|super]]`,
+    		font_variant_ligatures:`normal|none|[<common-lig-values>||<discretionary-lig-values>||<historical-lig-values>||<contextual-alt-values> ]`,
+    		font_variant_position:`normal|sub|super`,
+    		font_variant_caps:`normal|small-caps|all-small-caps|petite-caps|all-petite-caps|unicase|titling-caps`,
+    		font_variant_numeric: "normal | [ <numeric-figure-values> || <numeric-spacing-values> || <numeric-fraction-values> || ordinal || slashed-zero ]",
+    		font_variant_east_asian:" normal | [ <east-asian-variant-values> || <east-asian-width-values> || ruby ]",
+
+    	/* https://drafts.csswg.org/css-text-3 */
+    		hanging_punctuation : "none|[first||[force-end|allow-end]||last]",
+    		hyphens : "none|manual|auto",
+    		letter_spacing: `normal|<length>`,
+    		line_break : "auto|loose|normal|strict|anywhere",
+    		overflow_wrap : "normal|break-word|anywhere",
+    		tab_size : "<length>|<number>",
+    		text_align : "start|end|left|right|center|justify|match-parent|justify-all",
+    		text_align_all : "start|end|left|right|center|justify|match-parent",
+    		text_align_last : "auto|start|end|left|right|center|justify|match-parent",
+    		text_indent : "[[<length>|<percentage>]&&hanging?&&each-line?]",
+    		text_justify : "auto|none|inter-word|inter-character",
+    		text_transform : "none|[capitalize|uppercase|lowercase]||full-width||full-size-kana",
+    		white_space : "normal|pre|nowrap|pre-wrap|break-spaces|pre-line",
+    		word_break : " normal|keep-all|break-all|break-word",
+    		word_spacing : "normal|<length>",
+    		word_wrap : "  normal | break-word | anywhere",
+
+    	/* https://drafts.csswg.org/css-text-decor-3 */
+    		text_decoration: "<text-decoration-line>||<text-decoration-style>||<color>",
+    		text_decoration_color:"<color>",
+    		text_decoration_line:"none|[underline||overline||line-through||blink]",
+    		text_decoration_style:"solid|double|dotted|dashed|wavy",
+    		text_emphasis:"<text-emphasis-style>||<text-emphasis-color>",
+    		text_emphasis_color:"<color>",
+    		text_emphasis_position:"[over|under]&&[right|left]?",
+    		text_emphasis_style:"none|[[filled|open]||[dot|circle|double-circle|triangle|sesame]]|<string>",
+    		text_shadow:"none|[<color>?&&<length>{2,3}]#",
+    		text_underline_position:"auto|[under||[left|right]]",
+
+    	/* Flex Box https://www.w3.org/TR/css-flexbox-1/ */
+    		align_content: `flex-start | flex-end | center | space-between | space-around | stretch`,
+    		align_items: `flex-start | flex-end | center | baseline | stretch`,
+    		align_self: `auto | flex-start | flex-end | center | baseline | stretch`,
+    		flex:`none|[<flex-grow> <flex-shrink>?||<flex-basis>]`,
+    		flex_basis:`content|<width>`,
+    		flex_direction:`row | row-reverse | column | column-reverse`,
+    		flex_flow:`<flex-direction>||<flex-wrap>`,
+    		flex_grow:`<number>`,
+    		flex_shrink:`<number>`,
+    		flex_wrap:`nowrap|wrap|wrap-reverse`,
+    		justify_content :"flex-start | flex-end | center | space-between | space-around",
+    		order:`<integer>`,
+
+    	/* https://drafts.csswg.org/css-transitions-1/ */
+    		transition: `<single_transition>#`,
+    		transition_delay: `<time>#`,
+    		transition_duration: `<time>#`,
+    		transition_property: `none|<single_transition_property>#`,
+    		transition_timing_function: `<timing_function>#`,
+
+    	/* CSS3 Animation https://drafts.csswg.org/css-animations-1/ */
+    		animation: `<single_animation>#`,
+    		animation_name: `[none|<keyframes_name>]#`,
+    		animation_duration: `<time>#`,
+    		animation_timing_function: `<timing_function>#`,
+    		animation_iteration_count: `<single_animation_iteration_count>#`,
+    		animation_direction: `<single_animation_direction>#`,
+    		animation_play_state: `<single_animation_play_state>#`,
+    		animation_delayed: `<time>#`,
+    		animation_fill_mode: `<single_animation_fill_mode>#`,
+
+    	/* https://svgwg.org/svg2-draft/interact.html#PointerEventsProperty */
+    		pointer_events : `visiblePainted|visibleFill|visibleStroke|visible|painted|fill|stroke|all|none|auto`,
+
+    	/* https://drafts.csswg.org/css-ui-3 */
+    		caret_color :"auto|<color>",
+    		cursor:"[[<url> [<number><number>]?,]*[auto|default|none|context-menu|help|pointer|progress|wait|cell|crosshair|text|vertical-text|alias|copy|move|no-drop|not-allowed|grab|grabbing|e-resize|n-resize|ne-resize|nw-resize|s-resize|se-resize|sw-resize|w-resize|ew-resize|ns-resize|nesw-resize|nwse-resize|col-resize|row-resize|all-scroll|zoom-in|zoom-out]]",
+    		outline:"[<outline-color>||<outline-style>||<outline-width>]",
+    		outline_color:"<color>|invert",
+    		outline_offset:"<length>",
+    		outline_style:"auto|<border-style>",
+    		outline_width:"<line-width>",
+    		resize:"none|both|horizontal|vertical",
+    		text_overflow:"clip|ellipsis",
+
+    	/* https://drafts.csswg.org/css-content-3/ */
+    		bookmark_label:"<content-list>",
+    		bookmark_level:"none|<integer>",
+    		bookmark_state:"open|closed",
+    		content:"normal|none|[<content-replacement>|<content-list>][/<string>]?",
+    		quotes:"none|[<string><string>]+",
+    		string_set:"none|[<custom-ident><string>+]#",
+    	
+    	/*https://www.w3.org/TR/CSS22/tables.html*/
+    		caption_side:"top|bottom",
+    		table_layout:"auto|fixed",
+    		border_collapse:"collapse|separate",
+    		border_spacing:"<length><length>?",
+    		empty_cells:"show|hide",
+
+    	/* https://www.w3.org/TR/CSS2/page.html */
+    		page_break_before:"auto|always|avoid|left|right",
+    		page_break_after:"auto|always|avoid|left|right",
+    		page_break_inside:"auto|avoid|left|right",
+    		orphans:"<integer>",
+    		widows:"<integer>",
+
+    	/* https://drafts.csswg.org/css-lists-3 */
+    		counter_increment:"[<custom-ident> <integer>?]+ | none",
+    		counter_reset:"[<custom-ident> <integer>?]+|none",
+    		counter_set:"[<custom-ident> <integer>?]+|none",
+    		list_style:"<list-style-type>||<list-style-position>||<list-style-image>",
+    		list_style_image:"<url>|none",
+    		list_style_position:"inside|outside",
+    		list_style_type:"<counter-style>|<string>|none",
+    		marker_side:"list-item|list-container",
 
 
-        /*https://www.w3.org/TR/css-backgrounds-3/*/
-        /* Background */
-        background_color: `<color>`,
-        background_image: `<bg_image>#`,
-        background_repeat: `<repeat_style>#`,
-        background_attachment: `scroll|fixed|local`,
-        background_position: `[<percentage>|<length>]{1,2}|[top|center|bottom]||[left|center|right]`,
-        background_clip: `<box>#`,
-        background_origin: `<box>#`,
-        background_size: `<bg_size>#`,
-        background: `<bg_layer>#,<final_bg_layer>`,
+    	vertical_align: `baseline|sub|super|top|text-top|middle|bottom|text-bottom|<percentage>|<length>`,
 
-        /* Font https://www.w3.org/TR/css-fonts-4*/
-        font_family: `[[<family_name>|<generic_family>],]*[<family_name>|<generic_family>]`,
-        family_name: `<id>||<string>`,
-        generic_name: `serif|sans_serif|cursive|fantasy|monospace`,
-        font: `[<font_style>||<font_variant>||<font_weight>]?<font_size>[/<line_height>]?<font_family>`,
-        font_variant: `normal|small_caps`,
-        font_style: `normal | italic | oblique <angle>?`,
-        font_kerning: ` auto | normal | none`,
-        font_variant_ligatures:`normal|none|[<common-lig-values>||<discretionary-lig-values>||<historical-lig-values>||<contextual-alt-values> ]`,
-        font_variant_position:`normal|sub|super`,
-        font_variant_caps:`normal|small-caps|all-small-caps|petite-caps|all-petite-caps|unicase|titling-caps`,
-
-
-        /*CSS Clipping https://www.w3.org/TR/css-masking-1/#clipping `normal|italic|oblique`, */
-        font_size: `<absolute_size>|<relative_size>|<length>|<percentage>`,
-        absolute_size: `xx_small|x_small|small|medium|large|x_large|xx_large`,
-        relative_size: `larger|smaller`,
-        font_wight: `normal|bold|bolder|lighter|100|200|300|400|500|600|700|800|900`,
-
-        /* Text */
-        word_spacing: `normal|<length>`,
-        letter_spacing: `normal|<length>`,
-        text_decoration: `none|[underline||overline||line-through||blink]`,
-        text_transform: `capitalize|uppercase|lowercase|none`,
-        text_align: `left|right|center|justify`,
-        text_indent: `<length>|<percentage>`,
-
-
-        /* Border  https://www.w3.org/TR/css-backgrounds-3 */
-        border_color: `<color>{1,4}`,
-        border_top_color: `<color>`,
-        border_right_color: `<color>`,
-        border_bottom_color: `<color>`,
-        border_left_color: `<color>`,
-
-        border_width: `<line_width>{1,4}`,
-        border_top_width: `<line_width>`,
-        border_right_width: `<line_width>`,
-        border_bottom_width: `<line_width>`,
-        border_left_width: `<line_width>`,
-
-        border_style: `<line_style>{1,4}`,
-        border_top_style: `<line_style>`,
-        border_right_style: `<line_style>`,
-        border_bottom_style: `<line_style>`,
-        border_left_style: `<line_style>`,
-
-        border_top: `<line_width>||<line_style>||<color>`,
-        border_right: `<line_width>||<line_style>||<color>`,
-        border_bottom: `<line_width>||<line_style>||<color>`,
-        border_left: `<line_width>||<line_style>||<color>`,
-
-        border_radius: `<length_percentage>{1,4}[/<length_percentage>{1,4}]?`,
-        border_top_left_radius: `<length_percentage>{1,2}`,
-        border_top_right_radius: `<length_percentage>{1,2}`,
-        border_bottom_right_radius: `<length_percentage>{1,2}`,
-        border_bottom_left_radius: `<length_percentage>{1,2}`,
-
-        border_image: `<border_image_source>||<border_image_slice>[/<border_image_width>|/<border_image_width>?/<border_image_outset>]?||<border_image_repeat>`,
-        border_image_source: `none|<image>`,
-        border_image_slice: `[<number>|<percentage>]{1,4}&&fill?`,
-        border_image_width: `[<length_percentage>|<number>|auto]{1,4}`,
-        border_image_outset: `[<length>|<number>]{1,4}`,
-        border_image_repeat: `[stretch|repeat|round|space]{1,2}`,
-
-        box_shadow: `none|<shadow>#`,
-
-        border: `<line_width>||<line_style>||<color>`,
-
-        width: `<length>|<percentage>|auto|inherit`,
-        height: `<length>|<percentage>|auto|inherit`,
-        float: `left|right|none`,
-        clear: `left|right|both`,
-
-        /* Classification */
-
-        display: `[ <display_outside> || <display_inside> ] | <display_listitem> | <display_internal> | <display_box> | <display_legacy>`,
-        white_space: `normal|pre|nowrap`,
-        list_style_type: `disc|circle|square|decimal|decimal-leading-zero|lower-roman|upper-roman|lower-greek|lower-latin|upper-latin|armenian|georgian|lower-alpha|upper-alpha|none|inherit`,
-        list_style_image: `<url>|none`,
-        list_style_position: `inside|outside`,
-        list_style: `[disc|circle|square|decimal|lower-roman|upper-roman|lower-alpha|upper-alpha|none]||[inside|outside]||[<url>|none]`,
-        vertical_align: `baseline|sub|super|top|text-top|middle|bottom|text-bottom|<percentage>|<length>|inherit`,
-
-        /* Layout https://www.w3.org/TR/css-position-3 */ 
-        position: "static|relative|absolute|sticky|fixed",
-        top: `<length>|<percentage>|auto|inherit`,
-        left: `<length>|<percentage>|auto|inherit`,
-        bottom: `<length>|<percentage>|auto|inherit`,
-        right: `<length>|<percentage>|auto|inherit`,
-
-        
-        /* Box Model https://www.w3.org/TR/css-box-3 */
-        margin: `[<length>|<percentage>|0|auto]{1,4}`,
-        margin_top: `<length>|<percentage>|0|auto`,
-        margin_right: `<length>|<percentage>|0|auto`,
-        margin_bottom: `<length>|<percentage>|0|auto`,
-        margin_left: `<length>|<percentage>|0|auto`,
-
-        padding: `[<length>|<percentage>|0|auto]{1,4}`,
-        padding_top: `<length>|<percentage>|0|auto`,
-        padding_right: `<length>|<percentage>|0|auto`,
-        padding_bottom: `<length>|<percentage>|0|auto`,
-        padding_left: `<length>|<percentage>|0|auto`,
-
-        min_width: `<length>|<percentage>|inherit`,
-        max_width: `<length>|<percentage>|none|inherit`,
-        min_height: `<length>|<percentage>|inherit`,
-        max_height: `<length>|<percentage>|none|inherit`,
-        line_height: `normal|<number>|<length>|<percentage>|inherit`,
-        overflow: 'visible|hidden|scroll|auto|inherit',
-
-        /* Flex Box https://www.w3.org/TR/css-flexbox-1/ */
-        align_items: `flex-start | flex-end | center | baseline | stretch`,
-        align_self: `auto | flex-start | flex-end | center | baseline | stretch`,
-        align_content: `flex-start | flex-end | center | space-between | space-around | stretch`,
-        flex_direction:`row | row-reverse | column | column-reverse`,
-        flex_flow:`<flex-direction>||<flex-wrap>`,
-        flex_wrap:`nowrap|wrap|wrap-reverse`,
-        order:`<integer>`,
-        flex:`none|[<flex-grow> <flex-shrink>?||<flex-basis>]`,
-        flex_grow:`<number>`,
-        flex_shrink:`<number>`,
-        flex_basis:`content|<width>`,
-        width:`<length>|<percentage>|auto|inherit`,
-
-        box_sizing: `content-box | border-box`,
-
-        /* Visual Effects */
-        clip: '<shape>|auto|inherit',
-        visibility: `visible|hidden|collapse|inherit`,
-        content: `normal|none|[<string>|<uri>|<counter>|attr(<identifier>)|open-quote|close-quote|no-open-quote|no-close-quote]+|inherit`,
-        quotas: `[<string><string>]+|none|inherit`,
-        counter_reset: `[<identifier><integer>?]+|none|inherit`,
-        counter_increment: `[<identifier><integer>?]+|none|inherit`,
-
-        /* CSS3 Animation https://drafts.csswg.org/css-animations-1/ */
-        animation: `<single_animation>#`,
-
-        animation_name: `[none|<keyframes_name>]#`,
-        animation_duration: `<time>#`,
-        animation_timing_function: `<timing_function>#`,
-        animation_iteration_count: `<single_animation_iteration_count>#`,
-        animation_direction: `<single_animation_direction>#`,
-        animation_play_state: `<single_animation_play_state>#`,
-        animation_delayed: `<time>#`,
-        animation_fill_mode: `<single_animation_fill_mode>#`,
-
-        /* https://drafts.csswg.org/css-transitions-1/ */
-
-        transition: `<single_transition>#`,
-        transition_property: `none|<single_transition_property>#`,
-        transition_duration: `<time>#`,
-        transition_timing_function: `<timing_function>#`,
-        transition_delay: `<time>#`,
-
-        
-        /* https://www.w3.org/TR/SVG11/interact.html#PointerEventsProperty */
-        pointer_events : `visiblePainted|visibleFill|visibleStroke|visible|painted|fill|stroke|all|none|inherit|auto`,
+    	/* Visual Effects */
+    	clip: '<shape>|auto',
+    	visibility: `visible|hidden|collapse`,
+    	content: `normal|none|[<string>|<uri>|<counter>|attr(<identifier>)|open-quote|close-quote|no-open-quote|no-close-quote]+`,
+    	quotas: `[<string><string>]+|none`,
+    	counter_reset: `[<identifier><integer>?]+|none`,
+    	counter_increment: `[<identifier><integer>?]+|none`,
     };
 
     /* Properties that are not directly accessible by CSS prop creator */
 
     const virtual_property_definitions = {
+        /* https://drafts.csswg.org/css-counter-styles-3 */
+            /*system:`cyclic|numeric|alphabetic|symbolic|additive|[fixed<integer>?]|[extends<counter-style-name>]`,
+            negative:`<symbol><symbol>?`,
+            prefix:`<symbol>`,
+            suffix:`<symbol>`,
+            range:`[[<integer>|infinite]{2}]#|auto`,
+            pad:`<integer>&&<symbol>`,
+            fallback:`<counter-style-name>`
+            symbols:`<symbol>+`,*/
 
+            counter_style:`<numeric_counter_style>|<alphabetic_counter_style>|<symbolic_counter_style>|<japanese_counter_style>|<korean_counter_style>|<chinese_counter_style>|ethiopic-numeric`,
+            numeric_counter_style:`decimal|decimal-leading-zero|arabic-indic|armenian|upper-armenian|lower-armenian|bengali|cambodian|khmer|cjk-decimal|devanagari|georgian|gujarati|gurmukhi|hebrew|kannada|lao|malayalam|mongolian|myanmar|oriya|persian|lower-roman|upper-roman|tamil|telugu|thai|tibetan`,
+            symbolic_counter_style:`disc|circle|square|disclosure-open|disclosure-closed`,
+            alphabetic_counter_style:`lower-alpha|lower-latin|upper-alpha|upper-latin|cjk-earthly-branch|cjk-heavenly-stem|lower-greek|hiragana|hiragana-iroha|katakana|katakana-iroha`,
+            japanese_counter_style:`japanese-informal|japanese-formal`,
+            korean_counter_style:`korean-hangul-formal|korean-hanja-informal|and korean-hanja-formal`,
+            chinese_counter_style:`simp-chinese-informal|simp-chinese-formal|trad-chinese-informal|and trad-chinese-formal`,
 
-        alphavalue: '<number>',
+    	/* https://drafts.csswg.org/css-content-3/ */
+    		content_list:"[<string>|contents|<image>|<quote>|<target>|<leader()>]+",
+    		content_replacement:"<image>",
 
-        box: `border-box|padding-box|content-box`,
+    	/* https://drafts.csswg.org/css-values-4 */
+    		custom_ident:"<identifier>",
+    		position:"[[left|center|right]||[top|center|bottom]|[left|center|right|<length-percentage>][top|center|bottom|<length-percentage>]?|[[left|right]<length-percentage>]&&[[top|bottom]<length-percentage>]]",
+    	
+    	/* https://drafts.csswg.org/css-lists-3 */
 
-        /*https://www.w3.org/TR/css-backgrounds-3/*/
+    	east_asian_variant_values:"[jis78|jis83|jis90|jis04|simplified|traditional]",
 
-        bg_layer: `<bg_image>||<bg_position>[/<bg_size>]?||<repeat_style>||<attachment>||<box>||<box>`,
-        final_bg_layer: `<background_color>||<bg_image>||<bg_position>[/<bg_size>]?||<repeat_style>||<attachment>||<box>||<box>`,
-        bg_image: `<url>|<gradient>|none`,
-        repeat_style: `repeat-x|repeat-y|[repeat|space|round|no-repeat]{1,2}`,
-        background_attachment: `<attachment>#`,
-        bg_size: `<length_percentage>|auto]{1,2}|cover|contain`,
-        bg_position: `[[left|center|right|top|bottom|<length_percentage>]|[left|center|right|<length_percentage>][top|center|bottom|<length_percentage>]|[center|[left|right]<length_percentage>?]&&[center|[top|bottom]<length_percentage>?]]`,
-        attachment: `scroll|fixed|local`,
-        line_style: `none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset`,
-        line_width: `thin|medium|thick|<length>`,
+    	alphavalue: '<number>',
 
-        shadow: `inset?&&<length>{2,4}&&<color>?`,
+    	box: `border-box|padding-box|content-box`,
 
-        /* Identifier https://drafts.csswg.org/css-values-4/ */
+    	/*Font-Size: www.w3.org/TR/CSS2/fonts.html#propdef-font-size */
+    	absolute_size: `xx-small|x-small|small|medium|large|x-large|xx-large`,
+    	relative_size: `larger|smaller`,
 
-        identifier: `<id>`,
-        custom_ident: `<id>`,
+    	/*https://www.w3.org/TR/css-backgrounds-3/*/
 
-        /* https://drafts.csswg.org/css-timing-1/#typedef-timing-function */
+    	bg_layer: `<bg_image>||<bg_position>[/<bg_size>]?||<repeat_style>||<attachment>||<box>||<box>`,
+    	final_bg_layer: `<background_color>||<bg_image>||<bg_position>[/<bg_size>]?||<repeat_style>||<attachment>||<box>||<box>`,
+    	bg_image: `<url>|<gradient>|none`,
+    	repeat_style: `repeat-x|repeat-y|[repeat|space|round|no-repeat]{1,2}`,
+    	background_attachment: `<attachment>#`,
+    	bg_size: `<length_percentage>|auto]{1,2}|cover|contain`,
+    	bg_position: `[[left|center|right|top|bottom|<length_percentage>]|[left|center|right|<length_percentage>][top|center|bottom|<length_percentage>]|[center|[left|right]<length_percentage>?]&&[center|[top|bottom]<length_percentage>?]]`,
+    	attachment: `scroll|fixed|local`,
+    	line_style: `none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset`,
+    	line_width: `thin|medium|thick|<length>`,
+    	shadow: `inset?&&<length>{2,4}&&<color>?`,
 
-        timing_function: `linear|<cubic_bezier_timing_function>|<step_timing_function>|<frames_timing_function>`,
-        cubic_bezier_timing_function: `<cubic_bezier>`,
-        step_timing_function: `step-start|step-end|'steps()'`,
-        frames_timing_function: `'frames()'`,
+    	/* Font https://www.w3.org/TR/css-fonts-4/#family-name-value */
+    	
+    	family_name: `<fontname>`,
+    	generic_family: `serif|sans-serif|cursive|fantasy|monospace`,
+    	
+    	/* Identifier https://drafts.csswg.org/css-values-4/ */
 
-        /* https://drafts.csswg.org/css-transitions-1/ */
+    	identifier: `<id>`,
+    	custom_ident: `<id>`,
 
-        single_animation_fill_mode: `none|forwards|backwards|both`,
-        single_animation_play_state: `running|paused`,
-        single_animation_direction: `normal|reverse|alternate|alternate-reverse`,
-        single_animation_iteration_count: `infinite|<number>`,
-        single_transition_property: `all|<custom_ident>`,
-        single_transition: `[none|<single_transition_property>]||<time>||<timing_function>||<time>`,
+    	/* https://drafts.csswg.org/css-timing-1/#typedef-timing-function */
 
-        /* CSS3 Animation https://drafts.csswg.org/css-animations-1/ */
+    	timing_function: `linear|<cubic_bezier_timing_function>|<step_timing_function>|<frames_timing_function>`,
+    	cubic_bezier_timing_function: `<cubic_bezier>`,
+    	step_timing_function: `step-start|step-end|'steps()'`,
+    	frames_timing_function: `'frames()'`,
 
-        single_animation: `<time>||<timing_function>||<time>||<single_animation_iteration_count>||<single_animation_direction>||<single_animation_fill_mode>||<single_animation_play_state>||[none|<keyframes_name>]`,
-        keyframes_name: `<string>`,
+    	/* https://drafts.csswg.org/css-transitions-1/ */
 
-        /* CSS3 Stuff */
-        length_percentage: `<length>|<percentage>`,
-        frequency_percentage: `<frequency>|<percentage>`,
-        angle_percentage: `<angle>|<percentage>`,
-        time_percentage: `<time>|<percentage>`,
-        number_percentage: `<number>|<percentage>`,
+    	single_animation_fill_mode: `none|forwards|backwards|both`,
+    	single_animation_play_state: `running|paused`,
+    	single_animation_direction: `normal|reverse|alternate|alternate-reverse`,
+    	single_animation_iteration_count: `infinite|<number>`,
+    	single_transition_property: `all|<custom_ident>`,
+    	single_transition: `[none|<single_transition_property>]||<time>||<timing_function>||<time>`,
 
-        /*CSS Clipping https://www.w3.org/TR/css-masking-1/#clipping */
-        clip_path: `<clip_source>|[<basic_shape>||<geometry_box>]|none`,
-        clip_source: `<url>`,
-        shape_box: `<box>|margin-box`,
-        geometry_box: `<shape_box>|fill-box|stroke-box|view-box`,
-        basic_shape: `<CSS_Shape>`,
-        ratio: `<integer>/<integer>`,
+    	/* CSS3 Animation https://drafts.csswg.org/css-animations-1/ */
 
-        /* https://www.w3.org/TR/css-fonts-3/*/
-        common_lig_values        : `[ common-ligatures | no-common-ligatures ]`,
-        discretionary_lig_values : `[ discretionary-ligatures | no-discretionary-ligatures ]`,
-        historical_lig_values    : `[ historical-ligatures | no-historical-ligatures ]`,
-        contextual_alt_values    : `[ contextual | no-contextual ]`,
+    	single_animation: `<time>||<timing_function>||<time>||<single_animation_iteration_count>||<single_animation_direction>||<single_animation_fill_mode>||<single_animation_play_state>||[none|<keyframes_name>]`,
+    	keyframes_name: `<string>`,
 
-        //Display
-        display_outside  : `block | inline | run-in`,
-        display_inside   : `flow | flow-root | table | flex | grid | ruby`,
-        display_listitem : `<display-outside>? && [ flow | flow-root ]? && list-item`,
-        display_internal : `table-row-group | table-header-group | table-footer-group | table-row | table-cell | table-column-group | table-column | table-caption | ruby-base | ruby-text | ruby-base-container | ruby-text-container`,
-        display_box      : `contents | none`,
-        display_legacy   : `inline-block | inline-table | inline-flex | inline-grid`,
+    	/* CSS3 Stuff */
+    	length_percentage: `<length>|<percentage>`,
+    	frequency_percentage: `<frequency>|<percentage>`,
+    	angle_percentage: `<angle>|<percentage>`,
+    	time_percentage: `<time>|<percentage>`,
+    	number_percentage: `<number>|<percentage>`,
+
+    	/*CSS Clipping https://www.w3.org/TR/css-masking-1/#clipping */
+    	clip_path: `<clip_source>|[<basic_shape>||<geometry_box>]|none`,
+    	clip_source: `<url>`,
+    	shape_box: `<box>|margin-box`,
+    	geometry_box: `<shape_box>|fill-box|stroke-box|view-box`,
+    	basic_shape: `<CSS_Shape>`,
+    	ratio: `<integer>/<integer>`,
+
+    	/* https://www.w3.org/TR/css-fonts-3/*/
+    	common_lig_values        : `[ common-ligatures | no-common-ligatures ]`,
+    	discretionary_lig_values : `[ discretionary-ligatures | no-discretionary-ligatures ]`,
+    	historical_lig_values    : `[ historical-ligatures | no-historical-ligatures ]`,
+    	contextual_alt_values    : `[ contextual | no-contextual ]`,
+
+    	//Display
+    	display_outside  : `block | inline | run-in`,
+    	display_inside   : `flow | flow-root | table | flex | grid | ruby`,
+    	display_listitem : `<display_outside>? && [ flow | flow-root ]? && list-item`,
+    	display_internal : `table-row-group | table-header-group | table-footer-group | table-row | table-cell | table-column-group | table-column | table-caption | ruby-base | ruby-text | ruby-base-container | ruby-text-container`,
+    	display_box      : `contents | none`,
+    	display_legacy   : `inline-block | inline-table | inline-flex | inline-grid`,
     };
 
     const media_feature_definitions = {
-        width: "<m_width>",
-        min_width: "<m_max_width>",
-        max_width: "<m_min_width>",
-        height: "<m_height>",
-        min_height: "<m_min_height>",
-        max_height: "<m_max_height>",
-        orientation: "portrait  | landscape",
-        aspect_ratio: "<ratio>",
-        min_aspect_ratio: "<ratio>",
-        max_aspect_ratio: "<ratio>",
-        resolution: "<length>",
-        min_resolution: "<length>",
-        max_resolution: "<length>",
-        scan: "progressive|interlace",
-        grid: "",
-        monochrome: "",
-        min_monochrome: "<integer>",
-        max_monochrome: "<integer>",
-        color: "",
-        min_color: "<integer>",
-        max_color: "<integer>",
-        color_index: "",
-        min_color_index: "<integer>",
-        max_color_index: "<integer>",
+    	width: "<m_width>",
+    	min_width: "<m_max_width>",
+    	max_width: "<m_min_width>",
+    	height: "<m_height>",
+    	min_height: "<m_min_height>",
+    	max_height: "<m_max_height>",
+    	orientation: "portrait  | landscape",
+    	aspect_ratio: "<ratio>",
+    	min_aspect_ratio: "<ratio>",
+    	max_aspect_ratio: "<ratio>",
+    	resolution: "<length>",
+    	min_resolution: "<length>",
+    	max_resolution: "<length>",
+    	scan: "progressive|interlace",
+    	grid: "",
+    	monochrome: "",
+    	min_monochrome: "<integer>",
+    	max_monochrome: "<integer>",
+    	color: "",
+    	min_color: "<integer>",
+    	max_color: "<integer>",
+    	color_index: "",
+    	min_color_index: "<integer>",
+    	max_color_index: "<integer>",
 
     };
 
@@ -4001,29 +4470,27 @@ ${is_iws}`;
      * @memberof module:wick~internals.css
      * @alias CSSSelector
      */
-    class CSSSelector {
+    class CSSSelector$1 {
 
-        constructor(selectors /* string */ , selectors_arrays /* array */ ) {
+        constructor(value = "", value_array = []) {
 
             /**
              * The raw selector string value
              * @package
              */
-
-            this.v = selectors;
+            this.v = value;
 
             /**
              * Array of separated selector strings in reverse order.
              * @package
              */
+            this.a = value_array;
 
-            this.a = selectors_arrays;
-
-            /**
-             * The CSSRule.
-             * @package
-             */
+            // CSS Rulesets the selector is member of .
             this.r = null;
+
+            // CSS root the selector is a child of. 
+            this.root = null;
         }
 
         get id() {
@@ -4053,6 +4520,23 @@ ${is_iws}`;
             }
         }
 
+        removeRule(){
+            if(this.r)
+                this.r.decrementRef();
+
+            this.r = null;
+        }
+
+        addRule(rule = null){
+            
+            this.removeRule();
+
+            if(rule !== null)
+                rule.incrementRef();
+
+            this.r = rule;
+        }
+
     }
 
     /**
@@ -4060,7 +4544,7 @@ ${is_iws}`;
      * @memberof module:wick~internals.css
      * @alias CSSRule
      */
-    class CSSRule {
+    class CSSRule$1 {
         constructor(root) {
             /**
              * Collection of properties held by this rule.
@@ -4069,6 +4553,24 @@ ${is_iws}`;
             this.props = {};
             this.LOADED = false;
             this.root = root;
+
+            //Reference Counting
+            this.refs = 0;
+
+            //Versioning
+            this.ver = 0;
+        }
+
+        incrementRef(){
+            this.refs++;
+        }
+
+        decrementRef(){
+            this.refs--;
+            if(this.refs <= 0){
+                //TODO: remove from rules entries.
+                debugger
+            }
         }
 
         addProperty(prop, rule) {
@@ -4076,16 +4578,28 @@ ${is_iws}`;
                 this.props[prop.name] = prop.value;
         }
 
-        toString(off = 0) {
+
+
+        toString(off = 0, rule = "") {
             let str = [],
                 offset = ("    ").repeat(off);
 
-            for (let a in this.props) {
-                if (this.props[a] !== null) {
-                    if (Array.isArray(this.props[a]))
-                        str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].join(" "), ";\n");
+            if (rule) {
+                if (this.props[rule]) {
+                    if (Array.isArray(this.props[rule]))
+                        str.push(this.props[rule].join(" "));
                     else
-                        str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].toString(), ";\n");
+                        str.push(this.props[rule].toString());
+                }else
+                    return "";
+            } else {
+                for (let a in this.props) {
+                    if (this.props[a] !== null) {
+                        if (Array.isArray(this.props[a]))
+                            str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].join(" "), ";\n");
+                        else
+                            str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].toString(), ";\n");
+                    }
                 }
             }
 
@@ -4097,6 +4611,7 @@ ${is_iws}`;
                 for (let n in rule.props)
                     this.props[n] = rule.props[n];
                 this.LOADED = true;
+                this.ver++;
             }
         }
 
@@ -4105,27 +4620,54 @@ ${is_iws}`;
         set _wick_type_(v) {}
     }
 
-    /**
-     * wick internals.
-     * @class      NR (name)
-     */
-    class NR { //Notation Rule
+    function checkDefaults(lx) {
+        const tx = lx.tx;
+        /* https://drafts.csswg.org/css-cascade/#inherited-property */
+        switch (lx.tx) {
+            case "initial": //intentional
+            case "inherit": //intentional
+            case "unset": //intentional
+            case "revert": //intentional
+                if (!lx.pk.pk.END) // These values should be the only ones present. Failure otherwise.
+                    return 0; // Default value present among other values. Invalid
+                return 1; // Default value present only. Valid
+        }    return 2; // Default value not present. Ignore
+    }
+
+    class JUX { /* Juxtaposition */
 
         constructor() {
-
+            this.id = JUX.step++;
             this.r = [NaN, NaN];
-            this._terms_ = [];
-            this._prop_ = null;
-            this._virtual_ = false;
+            this.terms = [];
+            this.prop = null;
+            this.name = "";
+            this.virtual = false;
+            this.REQUIRE_COMMA = false;
+        }
+        mergeValues(existing_v, new_v) {
+            if (existing_v)
+                if (existing_v.v) {
+                    if (Array.isArray(existing_v.v))
+                        existing_v.v.push(new_v.v);
+                    else {
+                        existing_v.v = [existing_v.v, new_v.v];
+                    }
+                } else
+                    existing_v.v = new_v.v;
         }
 
-        sp(value, rule) { //Set Property
-            if (this._prop_){
+        seal() {
+
+        }
+
+        sp(value, rule) { /* Set Property */
+            if (this.prop) {
                 if (value)
                     if (Array.isArray(value) && value.length === 1 && Array.isArray(value[0]))
-                        rule[this._prop_] = value[0];
+                        rule[this.prop] = value[0];
                     else
-                        rule[this._prop_] = value;
+                        rule[this.prop] = value;
             }
         }
 
@@ -4133,152 +4675,319 @@ ${is_iws}`;
             return !(isNaN(this.r[0]) && isNaN(this.r[1]));
         }
 
-        parse(lx, rule, out_val) {
+        parse(lx, rule, out_val, ROOT = true) {
+                
             if (typeof(lx) == "string")
                 lx = whind$1(lx);
 
             let r = out_val || { v: null },
-                start = isNaN(this.r[0]) ? 1 : this.r[0],
-                end = isNaN(this.r[1]) ? 1 : this.r[1];
+                bool = false;
 
-            return this.___(lx, rule, out_val, r, start, end);
-        }
-
-        ___(lx, rule, out_val, r, start, end) {
-            let bool = true;
-            for (let j = 0; j < end && !lx.END; j++) {
-
-                for (let i = 0, l = this._terms_.length; i < l; i++) {
-                    bool = this._terms_[i].parse(lx, rule, r);
-                    if (!bool) break;
-                }
-
-                if (!bool) {
-
-                    this.sp(r.v, rule);
-
-                    if (j < start)
-                        return false;
-                    else
+            if (ROOT) {
+                switch (checkDefaults(lx)) {
+                    case 1:
+                        this.sp(lx.tx, rule);
                         return true;
-                }
-            }
-
-            this.sp(r.v, rule);
-
-            return true;
-        }
-    }
-
-    class AND extends NR {
-        ___(lx, rule, out_val, r, start, end) {
-
-            outer:
-                for (let j = 0; j < end && !lx.END; j++) {
-                    for (let i = 0, l = this._terms_.length; i < l; i++)
-                        if (!this._terms_[i].parse(lx, rule, r)) return false;
-                }
-
-            this.sp(r.v, rule);
-
-            return true;
-        }
-    }
-
-    class OR extends NR {
-        ___(lx, rule, out_val, r, start, end) {
-            let bool = false;
-
-            for (let j = 0; j < end && !lx.END; j++) {
-                bool = false;
-
-                for (let i = 0, l = this._terms_.length; i < l; i++)
-                    if (this._terms_[i].parse(lx, rule, r)) bool = true;
-
-                if (!bool && j < start) {
-                    this.sp(r.v, rule);
-                    return false;
-                }
-            }
-
-            this.sp(r.v, rule);
-
-            return true;
-        }
-    }
-
-    class ONE_OF extends NR {
-        ___(lx, rule, out_val, r, start, end) {
-            let bool = false;
-
-            for (let j = 0; j < end && !lx.END; j++) {
-                bool = false;
-
-                for (let i = 0, l = this._terms_.length; i < l; i++) {
-                    bool = this._terms_[i].parse(lx, rule, r);
-                    if (bool) break;
-                }
-
-                if (!bool)
-                    if (j < start) {
-                        this.sp(r.v, rule);
+                    case 0:
                         return false;
-                    }
-            }
+                }
 
-            this.sp(r.v, rule);
+                bool = this.innerParser(lx, rule, out_val, r, this.start, this.end);
+
+                //if (!lx.END)
+                //    return false;
+                //else
+                    this.sp(r.v, rule);
+            } else
+                bool = this.innerParser(lx, rule, out_val, r, this.start, this.end);
+
+            return bool;
+        }
+
+        checkForComma(lx) {
+            if (this.REQUIRE_COMMA) {
+                if (lx.ch == ",")
+                    lx.next();
+                else return false;
+            }
+            return true;
+        }
+
+        innerParser(lx, rule, out_val, r, start, end) {
+
+            let bool = false;
+
+            repeat:
+                for (let j = 0; j < end && !lx.END; j++) {
+                    let copy = lx.copy();
+                    let temp_r = { v: null };
+
+                    for (let i = 0, l = this.terms.length; i < l; i++) {
+
+                        let term = this.terms[i];
+
+                        if (!term.parse(copy, rule, temp_r, false)) {
+                            if (!term.OPTIONAL) {
+                                break repeat;
+                            }
+                        }
+                    }
+
+                    if (temp_r.v)
+                        this.mergeValues(r, temp_r);
+
+                    lx.sync(copy);
+
+                    bool = true;
+
+                    if (!this.checkForComma(lx))
+                        break;
+                }
+
+            if (bool)
+                //console.log("JUX", s, bool)
+                return bool;
+        }
+
+        get start() {
+            return isNaN(this.r[0]) ? 1 : this.r[0];
+        }
+        set start(e) {}
+
+        get end() {
+            return isNaN(this.r[1]) ? 1 : this.r[1];
+        }
+        set end(e) {}
+
+        get OPTIONAL() { return this.r[0] === 0 }
+        set OPTIONAL(a) {}
+    }
+    JUX.step = 0;
+    class AND extends JUX {
+        innerParser(lx, rule, out_val, r, start, end) {
+
+            const
+                PROTO = new Array(this.terms.length),
+                l = this.terms.length;
+
+            let bool = false;
+
+            repeat:
+                for (let j = 0; j < end && !lx.END; j++) {
+
+                    const
+                        HIT = PROTO.fill(0),
+                        copy = lx.copy(),
+                        temp_r = { v: null };
+
+                    and:
+                        while (true) {
+
+
+
+                            for (let i = 0; i < l; i++) {
+
+                                if (HIT[i] === 2) continue;
+
+                                let term = this.terms[i];
+
+                                if (!term.parse(copy, rule, temp_r, false)) {
+                                    if (term.OPTIONAL)
+                                        HIT[i] = 1;
+                                } else {
+                                    HIT[i] = 2;
+                                    continue and;
+                                }
+                            }
+
+                            if (HIT.reduce((a, v) => a * v, 1) === 0)
+                                break repeat;
+
+                            break
+                        }
+
+
+
+                    lx.sync(copy);
+
+                    if (temp_r.v)
+                        this.mergeValues(r, temp_r);
+
+                    bool = true;
+
+                    if (!this.checkForComma(lx))
+                        break;
+                }
 
             return bool;
         }
     }
 
+    class OR extends JUX {
+        innerParser(lx, rule, out_val, r, start, end) {
+
+            const
+                PROTO = new Array(this.terms.length),
+                l = this.terms.length;
+
+            let
+                bool = false,
+                NO_HIT = true;
+
+            repeat:
+                for (let j = 0; j < end && !lx.END; j++) {
+
+                    const HIT = PROTO.fill(0);
+                    let copy = lx.copy();
+                    let temp_r = { v: null };
+
+                    or:
+                        while (true) {
+                            for (let i = 0; i < l; i++) {
+
+                                if (HIT[i] === 2) continue;
+
+                                let term = this.terms[i];
+
+                                if (term.parse(copy, temp_r, r, false)) {
+                                    NO_HIT = false;
+                                    HIT[i] = 2;
+                                    continue or;
+                                }
+                            }
+
+                            if (NO_HIT) break repeat;
+
+                            break;
+                        }
+
+                    lx.sync(copy);
+
+                    if (temp_r.v)
+                        this.mergeValues(r, temp_r);
+
+                    bool = true;
+
+                    if (!this.checkForComma(lx))
+                        break;
+                }
+
+            return bool;
+        }
+    }
+
+    OR.step = 0;
+
+    class ONE_OF extends JUX {
+        innerParser(lx, rule, out_val, r, start, end) {
+
+            let BOOL = false;
+
+            let j;
+            for (j = 0; j < end && !lx.END; j++) {
+                let bool = false;
+                let copy = lx.copy();
+                let temp_r = { v: null };
+
+                for (let i = 0, l = this.terms.length; i < l; i++) {
+                    ////if (!this.terms[i]) console.log(this)
+                    if (this.terms[i].parse(copy, rule, temp_r, false)) {
+                        bool = true;
+                        break;
+                    }
+                }
+
+                if (!bool)
+                    break;
+
+                lx.sync(copy);
+                
+                if (temp_r.v)
+                    this.mergeValues(r, temp_r);
+
+                BOOL = true;
+
+                if (!this.checkForComma(lx))
+                    break;
+            }
+
+            return BOOL;
+        }
+    }
+
+    ONE_OF.step = 0;
+
     class ValueTerm {
 
-        constructor(value, getPropertyParser, definitions) {
+        constructor(value, getPropertyParser, definitions, productions) {
 
-            this._value_ = null;
+            if(value instanceof JUX)
+                return value;
+            
+
+            this.value = null;
 
             const IS_VIRTUAL = { is: false };
+            
+            if(typeof(value) == "string")
+                var u_value = value.replace(/\-/g,"_");
 
-            if (!(this._value_ = types[value]))
-                this._value_ = getPropertyParser(value, IS_VIRTUAL, definitions);
+            if (!(this.value = types[u_value]))
+                this.value = getPropertyParser(u_value, IS_VIRTUAL, definitions, productions);
 
-            this._prop_ = "";
+            this.prop = "";
 
-            if (!this._value_)
+            if (!this.value)
                 return new LiteralTerm(value);
 
-            if (this._value_ instanceof NR && IS_VIRTUAL.is)
-                this._virtual_ = true;
+            if(this.value instanceof JUX){
+                if (IS_VIRTUAL.is)
+                    this.value.virtual = true;
+                return this.value;
+            }
+
         }
 
-        parse(l, rule, r) {
+        seal(){}
+
+        parse(l, rule, r, ROOT = true) {
             if (typeof(l) == "string")
                 l = whind$1(l);
 
+            if (ROOT) {
+
+                switch(checkDefaults(l)){
+                    case 1:
+                    rule[this.prop] = l.tx;
+                    return true;
+                    case 0:
+                    return false;
+                }
+            }
+
             let rn = { v: null };
 
-            let v = this._value_.parse(l, rule, rn);
+            let v = this.value.parse(l, rule, rn);
 
             if (rn.v) {
                 if (r)
                     if (r.v) {
                         if (Array.isArray(r.v)) {
-                            if (Array.isArray(rn.v) && !this._virtual_)
+                            if (Array.isArray(rn.v) && !this.virtual)
                                 r.v = r.v.concat(rn.v);
                             else
                                 r.v.push(rn.v);
                         } else {
-                            if (Array.isArray(rn.v) && !this._virtual_)
+                            if (Array.isArray(rn.v) && !this.virtual)
                                 r.v = ([r.v]).concat(rn.v);
                             else
                                 r.v = [r.v, rn.v];
                         }
                     } else
-                        r.v = (this._virtual_) ? [rn.v] : rn.v;
+                        r.v = (this.virtual) ? [rn.v] : rn.v;
 
-                if (this._prop_)
-                    rule[this._prop_] = rn.v;
+                if (this.prop && !this.virtual)
+                    rule[this.prop] = rn.v;
 
                 return true;
 
@@ -4292,29 +5001,48 @@ ${is_iws}`;
                     } else
                         r.v = v;
 
-                if (this._prop_)
-                    rule[this._prop_] = v;
+                if (this.prop && !this.virtual && ROOT)
+                    rule[this.prop] = v;
 
                 return true;
             } else
                 return false;
         }
+
+        get OPTIONAL (){ return false }
+        set OPTIONAL (a){}
     }
 
     class LiteralTerm {
 
-        constructor(value) {
-            this._value_ = value;
-            this._prop_ = null;
+        constructor(value, type) {
+            
+            if(type == whind$1.types.string)
+                value = value.slice(1,-1);
+
+            this.value = value;
+            this.prop = null;
         }
 
-        parse(l, rule, r) {
+        seal(){}
+
+        parse(l, rule, r, root = true) {
 
             if (typeof(l) == "string")
                 l = whind$1(l);
 
+            if (root) {
+                switch(checkDefaults(l)){
+                    case 1:
+                    rule[this.prop] = l.tx;
+                    return true;
+                    case 0:
+                    return false;
+                }
+            }
+
             let v = l.tx;
-            if (v == this._value_) {
+            if (v == this.value) {
                 l.next();
 
                 if (r)
@@ -4328,13 +5056,16 @@ ${is_iws}`;
                     } else
                         r.v = v;
 
-                if (this._prop_)
-                    rule[this._prop_] = v;
+                if (this.prop  && !this.virtual && root)
+                    rule[this.prop] = v;
 
                 return true;
             }
             return false;
         }
+
+        get OPTIONAL (){ return false }
+        set OPTIONAL (a){}
     }
 
     class SymbolTerm extends LiteralTerm {
@@ -4342,7 +5073,7 @@ ${is_iws}`;
             if (typeof(l) == "string")
                 l = whind$1(l);
 
-            if (l.tx == this._value_) {
+            if (l.tx == this.value) {
                 l.next();
                 return true;
             }
@@ -4351,26 +5082,43 @@ ${is_iws}`;
         }
     }
 
-    function getPropertyParser(property_name, IS_VIRTUAL = { is: false }, definitions = null) {
+    //import util from "util"
+    const standard_productions = {
+        JUX,
+        AND,
+        OR,
+        ONE_OF,
+        LiteralTerm,
+        ValueTerm,
+        SymbolTerm
+    };
+    function getPropertyParser(property_name, IS_VIRTUAL = { is: false }, definitions = null, productions = standard_productions) {
 
         let prop = definitions[property_name];
 
         if (prop) {
 
-            if (typeof(prop) == "string")
-                prop = definitions[property_name] = CreatePropertyParser(prop, property_name, definitions);
-
+            if (typeof(prop) == "string") {
+                prop = definitions[property_name] = CreatePropertyParser(prop, property_name, definitions, productions);
+            }
+            prop.name = property_name;
             return prop;
         }
 
-        prop = virtual_property_definitions[property_name];
+        if (!definitions.__virtual)
+            definitions.__virtual = Object.assign({}, virtual_property_definitions);
+
+        prop = definitions.__virtual[property_name];
 
         if (prop) {
 
             IS_VIRTUAL.is = true;
 
-            if (typeof(prop) == "string")
-                prop = virtual_property_definitions[property_name] = CreatePropertyParser(prop, "", definitions);
+            if (typeof(prop) == "string") {
+                prop = definitions.__virtual[property_name] = CreatePropertyParser(prop, "", definitions, productions);
+                prop.virtual = true;
+                prop.name = property_name;
+            }
 
             return prop;
         }
@@ -4379,71 +5127,108 @@ ${is_iws}`;
     }
 
 
-    function CreatePropertyParser(notation, name, definitions) {
+    function CreatePropertyParser(notation, name, definitions, productions) {
 
         const l = whind$1(notation);
-
         const important = { is: false };
 
-        let n = d$1(l, definitions);
+        let n = d$1(l, definitions, productions);
+        
+        n.seal();
 
-        if (n instanceof NR && n._terms_.length == 1)
-            n = n._terms_[0];
+        //if (n instanceof productions.JUX && n.terms.length == 1 && n.r[1] < 2)
+        //    n = n.terms[0];
 
-        n._prop_ = name;
+        n.prop = name;
         n.IMP = important.is;
+
+        /*//******** DEV 
+        console.log("")
+        console.log("")
+        console.log(util.inspect(n, { showHidden: false, depth: null })) 
+        //********** END Dev*/
 
         return n;
     }
 
-    function d$1(l, definitions, super_term = false, group = false, need_group = false, and_group = false, important = null) {
-        let term, nt;
+    function d$1(l, definitions, productions, super_term = false, oneof_group = false, or_group = false, and_group = false, important = null) {
+        let term, nt, v;
+        const { JUX: JUX$$1, AND: AND$$1, OR: OR$$1, ONE_OF: ONE_OF$$1, LiteralTerm: LiteralTerm$$1, ValueTerm: ValueTerm$$1, SymbolTerm: SymbolTerm$$1 } = productions;
 
         while (!l.END) {
+
             switch (l.ch) {
                 case "]":
-                    if (term) return term;
-                    else 
-                        throw new Error("Expected to have term before \"]\"");
-                case "[":
-                    if (term) return term;
-                    term = d$1(l.next(), definitions);
-                    l.a("]");
+                    return term;
                     break;
+                case "[":
+
+                    v = d$1(l.next(), definitions, productions, true);
+                    l.assert("]");
+                    v = checkExtensions(l, v, productions);
+
+                    if (term) {
+                        if (term instanceof JUX$$1 && term.isRepeating()) term = foldIntoProduction(productions, new JUX$$1, term);
+                        term = foldIntoProduction(productions, term, v);
+                    } else
+                        term = v;
+                    break;
+
+                case "<":
+
+                    v = new ValueTerm$$1(l.next().tx, getPropertyParser, definitions, productions);
+                    l.next().assert(">");
+
+                    v = checkExtensions(l, v, productions);
+
+                    if (term) {
+                        if (term instanceof JUX$$1 /*&& term.isRepeating()*/) term = foldIntoProduction(productions, new JUX$$1, term);
+                        term = foldIntoProduction(productions, term, v);
+                    } else {
+                        term = v;
+                    }
+                    break;
+
                 case "&":
+
                     if (l.pk.ch == "&") {
+
                         if (and_group)
                             return term;
 
-                        nt = new AND();
+                        nt = new AND$$1();
 
-                        nt._terms_.push(term);
+                        if (!term) throw new Error("missing term!");
+
+                        nt.terms.push(term);
 
                         l.sync().next();
 
                         while (!l.END) {
-                            nt._terms_.push(d$1(l, definitions, super_term, group, need_group, true, important));
+                            nt.terms.push(d$1(l, definitions, productions, super_term, oneof_group, or_group, true, important));
                             if (l.ch !== "&" || l.pk.ch !== "&") break;
                             l.a("&").a("&");
                         }
 
                         return nt;
                     }
+                    break;
                 case "|":
+
                     {
                         if (l.pk.ch == "|") {
 
-                            if (need_group)
+                            if (or_group || and_group)
                                 return term;
 
-                            nt = new OR();
+                            nt = new OR$$1();
 
-                            nt._terms_.push(term);
+                            nt.terms.push(term);
 
                             l.sync().next();
 
                             while (!l.END) {
-                                nt._terms_.push(d$1(l, definitions, super_term, group, true, and_group, important));
+                                nt.terms.push(d$1(l, definitions, productions, super_term, oneof_group, true, and_group, important));
                                 if (l.ch !== "|" || l.pk.ch !== "|") break;
                                 l.a("|").a("|");
                             }
@@ -4451,18 +5236,18 @@ ${is_iws}`;
                             return nt;
 
                         } else {
-                            if (group) {
+
+                            if (oneof_group || or_group || and_group)
                                 return term;
-                            }
 
-                            nt = new ONE_OF();
+                            nt = new ONE_OF$$1();
 
-                            nt._terms_.push(term);
+                            nt.terms.push(term);
 
                             l.next();
 
                             while (!l.END) {
-                                nt._terms_.push(d$1(l, definitions, super_term, true, need_group, and_group, important));
+                                nt.terms.push(d$1(l, definitions, productions, super_term, true, or_group, and_group, important));
                                 if (l.ch !== "|") break;
                                 l.a("|");
                             }
@@ -4471,97 +5256,98 @@ ${is_iws}`;
                         }
                     }
                     break;
+                default:
+
+                    v = (l.ty == l.types.symbol) ? new SymbolTerm$$1(l.tx) : new LiteralTerm$$1(l.tx, l.ty);
+                    l.next();
+                    v = checkExtensions(l, v, productions);
+
+                    if (term) {
+                        if (term instanceof JUX$$1 /*&& (term.isRepeating() || term instanceof ONE_OF)*/) term = foldIntoProduction(productions, new JUX$$1, term);
+                        term = foldIntoProduction(productions, term, v);
+                    } else {
+                        term = v;
+                    }
+            }
+        }
+
+        return term;
+    }
+
+    function checkExtensions(l, term, productions) {
+        outer:
+        while (true) {
+
+            switch (l.ch) {
+                case "!":
+                    /* https://www.w3.org/TR/CSS21/cascade.html#important-rules */
+                    term.IMPORTANT = true;
+                    l.next();
+                    continue outer;
                 case "{":
-                    term = _Jux_(term);
+                    term = foldIntoProduction(productions, term);
                     term.r[0] = parseInt(l.next().tx);
                     if (l.next().ch == ",") {
                         l.next();
-                        if (l.next().ch == "}")
-                            term.r[1] = Infinity;
-                        else {
+                        if (l.pk.ch == "}") {
+
                             term.r[1] = parseInt(l.tx);
                             l.next();
+                        } else {
+                            term.r[1] = Infinity;
                         }
                     } else
                         term.r[1] = term.r[0];
                     l.a("}");
-                    if (super_term) return term;
                     break;
                 case "*":
-                    term = _Jux_(term);
+                    term = foldIntoProduction(productions, term);
                     term.r[0] = 0;
                     term.r[1] = Infinity;
                     l.next();
-                    if (super_term) return term;
                     break;
                 case "+":
-                    term = _Jux_(term);
+                    term = foldIntoProduction(productions, term);
                     term.r[0] = 1;
                     term.r[1] = Infinity;
                     l.next();
-                    if (super_term) return term;
                     break;
                 case "?":
-                    term = _Jux_(term);
+                    term = foldIntoProduction(productions, term);
                     term.r[0] = 0;
                     term.r[1] = 1;
                     l.next();
-                    if (super_term) return term;
                     break;
                 case "#":
-                    term = _Jux_(term);
-                    term._terms_.push(new SymbolTerm(","));
+                    term = foldIntoProduction(productions, term);
+                    term.terms.push(new SymbolTerm(","));
                     term.r[0] = 1;
                     term.r[1] = Infinity;
+                    term.REQUIRE_COMMA = true;
                     l.next();
                     if (l.ch == "{") {
                         term.r[0] = parseInt(l.next().tx);
                         term.r[1] = parseInt(l.next().a(",").tx);
                         l.next().a("}");
                     }
-                    if (super_term) return term;
                     break;
-                case "<":
-
-                    if (term) {
-                        if (term instanceof NR && term.isRepeating()) term = _Jux_(new NR, term);
-                        let v = d$1(l, definitions, true);
-                        term = _Jux_(term, v);
-                    } else {
-                        let v = new ValueTerm(l.next().tx, getPropertyParser, definitions);
-                        l.next().a(">");
-                        term = v;
-                    }
-                    break;
-                case "!":
-                    /* https://www.w3.org/TR/CSS21/cascade.html#important-rules */
-
-                    l.next().a("important");
-                    important.is = true;
-                    break;
-                default:
-                    if (term) {
-                        if (term instanceof NR && term.isRepeating()) term = _Jux_(new NR, term);
-                        let v = d$1(l, definitions, true);
-                        term = _Jux_(term, v);
-                    } else {
-                        let v = (l.ty == l.types.symbol) ? new SymbolTerm(l.tx) : new LiteralTerm(l.tx);
-                        l.next();
-                        term = v;
-                    }
             }
+            break;
         }
         return term;
     }
 
-    function _Jux_(term, new_term = null) {
+    function foldIntoProduction(productions, term, new_term = null) {
         if (term) {
-            if (!(term instanceof NR)) {
-                let nr = new NR();
-                nr._terms_.push(term);
+            if (!(term instanceof productions.JUX)) {
+                let nr = new productions.JUX();
+                nr.terms.push(term);
                 term = nr;
             }
-            if (new_term) term._terms_.push(new_term);
+            if (new_term) {
+                term.seal();
+                term.terms.push(new_term);
+            }
             return term;
         }
         return new_term;
@@ -4580,7 +5366,7 @@ ${is_iws}`;
      * The empty CSSRule instance
      * @alias module:wick~internals.css.empty_rule
      */
-    const er = Object.freeze(new CSSRule());
+    const er = Object.freeze(new CSSRule$1());
 
     class _selectorPart_ {
         constructor() {
@@ -4598,16 +5384,20 @@ ${is_iws}`;
     }
 
     class CSSRuleBody {
+        
         constructor() {
+
+            // 
             this.media_selector = null;
-            /**
-             * All selectors indexed by their value
-             */
+            
+            // All selectors indexed by their value
             this._selectors_ = {};
-            /**
-             * All selectors in order of appearance
-             */
+
+            //All selectors in order of appearance
             this._sel_a_ = [];
+
+            //
+            this.rules = []; 
         }
 
         _applyProperties_(lexer, rule) {
@@ -4694,12 +5484,12 @@ ${is_iws}`;
             return true;
         }
 
-        /**
-         * Retrieves the set of rules from all matching selectors for an element.
-         * @param      {HTMLElement}  element - An element to retrieve CSS rules.
-         * @public
-         */
-        getApplicableRules(element, rule = new CSSRule(), win = window) {
+        
+        /* 
+            Retrieves the set of rules from all matching selectors for an element.
+                element HTMLElement - An DOM element that should be matched to applicable rules. 
+        */
+        getApplicableRules(element, rule = new CSSRule$1(), win = window) {
 
             if (!this.matchMedia(win)) return;
 
@@ -4757,7 +5547,8 @@ ${is_iws}`;
             //Catch any comments
             if (lexer.ch == "/") {
                 lexer.comment(true);
-                return this.parseProperty(lexer, rule, definitions);
+                let bool = this.parseProperty(lexer, rule, definitions);
+                return 
             }
             lexer.next().a(":");
             //allow for short circuit < | > | =
@@ -4818,7 +5609,7 @@ ${is_iws}`;
                         selector_array = [];
                         selectors.push(lexer.s(start).trim().slice(0));
                         sel = new _selectorPart_();
-                        if (RETURN) return new CSSSelector(selectors, selectors_array, this);
+                        if (RETURN) return new CSSSelector$1(selectors, selectors_array, this);
                         lexer.next();
                         start = lexer.pos;
                         break;
@@ -4891,10 +5682,11 @@ ${is_iws}`;
                         break;
                 }
             }
+
             selector_array.unshift(sel);
             selectors_array.push(selector_array);
             selectors.push(lexer.s(start).trim().slice(0));
-            return new CSSSelector(selectors, selectors_array, this);
+            return new CSSSelector$1(selectors, selectors_array, this);
         }
 
         /**
@@ -4909,8 +5701,9 @@ ${is_iws}`;
             if (root && !this.par) root.push(this);
 
             return new Promise((res, rej) => {
-                let selectors = [],
-                    l = 0;
+                
+                let selectors = [], l = 0;
+                
                 while (!lexer.END) {
                     switch (lexer.ch) {
                         case "@":
@@ -4968,7 +5761,7 @@ ${is_iws}`;
                                          * We use that promise to hook into the existing promise returned by CSSRoot#parse,
                                          * executing a new parse sequence on the fetched string data using the existing CSSRoot instance,
                                          * and then resume the current parse sequence.
-                                         * @todo Conform to CSS spec and only parse if @import is at the top of the CSS string.
+                                         * @todo Conform to CSS spec and only parse if @import is at the head of the CSS string.
                                          */
                                         return type.fetchText().then((str) =>
                                             //Successfully fetched content, proceed to parse in the current root.
@@ -4990,11 +5783,18 @@ ${is_iws}`;
                             lexer.next();
                             return res(this);
                         case "{":
-                            let rule = new CSSRule(this);
+                            //Check to see if a rule body for the selector exists already.
+                            let MERGED = false;
+                            let rule = new CSSRule$1(this);
                             this._applyProperties_(lexer.next(), rule);
                             for (let i = -1, sel = null; sel = selectors[++i];)
-                                if (sel.r) sel.r.merge(rule);
-                                else sel.r = rule;
+                                if (sel.r) {sel.r.merge(rule); MERGED = true;}
+                                else sel.addRule(rule);
+
+                            if(!MERGED){
+                                this.rules.push(rule);
+                            }
+                                
                             selectors.length = l = 0;
                             continue;
                     }
@@ -5002,6 +5802,7 @@ ${is_iws}`;
                     let selector = this.parseSelector(lexer, this);
 
                     if (selector) {
+                        selector.root = this;
                         if (!this._selectors_[selector.id]) {
                             l = selectors.push(selector);
                             this._selectors_[selector.id] = selector;
@@ -5075,7 +5876,9 @@ ${is_iws}`;
                 if (!this._selectors_[selector.id]) {
                     this._selectors_[selector.id] = selector;
                     this._sel_a_.push(selector);
-                    selector.r = new CSSRule(this);
+                    const rule = new CSSRule$1(this);
+                    selector.addRule(rule);
+                    this.rules.push(rule);
                 } else
                     selector = this._selectors_[selector.id];
 
@@ -5084,6 +5887,1990 @@ ${is_iws}`;
     }
 
     LinkedList.mixinTree(CSSRuleBody);
+
+    function checkDefaults$1(lx) {
+        const tx = lx.tx;
+        /* https://drafts.csswg.org/css-cascade/#inherited-property */
+        switch (lx.tx) {
+            case "initial": //intentional
+            case "inherit": //intentional
+            case "unset": //intentional
+            case "revert": //intentional
+                if (!lx.pk.pk.END) // These values should be the only ones present. Failure otherwise.
+                    return 0; // Default value present among other values. Invalid
+                return 1; // Default value present only. Valid
+        }    return 2; // Default value not present. Ignore
+    }
+
+    class JUX$1 { /* Juxtaposition */
+
+        constructor() {
+            this.id = JUX$1.step++;
+            this.r = [NaN, NaN];
+            this.terms = [];
+            this.prop = null;
+            this.name = "";
+            this.virtual = false;
+            this.REQUIRE_COMMA = false;
+        }
+        mergeValues(existing_v, new_v) {
+            if (existing_v)
+                if (existing_v.v) {
+                    if (Array.isArray(existing_v.v))
+                        existing_v.v.push(new_v.v);
+                    else {
+                        existing_v.v = [existing_v.v, new_v.v];
+                    }
+                } else
+                    existing_v.v = new_v.v;
+        }
+
+        seal() {
+
+        }
+
+        sp(value, rule) { /* Set Property */
+            if (this.prop) {
+                if (value)
+                    if (Array.isArray(value) && value.length === 1 && Array.isArray(value[0]))
+                        rule[this.prop] = value[0];
+                    else
+                        rule[this.prop] = value;
+            }
+        }
+
+        isRepeating() {
+            return !(isNaN(this.r[0]) && isNaN(this.r[1]));
+        }
+
+        parse(lx, rule, out_val, ROOT = true) {
+                
+            if (typeof(lx) == "string")
+                lx = whind$1(lx);
+
+            let r = out_val || { v: null },
+                bool = false;
+
+            if (ROOT) {
+                switch (checkDefaults$1(lx)) {
+                    case 1:
+                        this.sp(lx.tx, rule);
+                        return true;
+                    case 0:
+                        return false;
+                }
+
+                bool = this.innerParser(lx, rule, out_val, r, this.start, this.end);
+
+                //if (!lx.END)
+                //    return false;
+                //else
+                    this.sp(r.v, rule);
+            } else
+                bool = this.innerParser(lx, rule, out_val, r, this.start, this.end);
+
+            return bool;
+        }
+
+        checkForComma(lx) {
+            if (this.REQUIRE_COMMA) {
+                if (lx.ch == ",")
+                    lx.next();
+                else return false;
+            }
+            return true;
+        }
+
+        innerParser(lx, rule, out_val, r, start, end) {
+
+            let bool = false;
+
+            repeat:
+                for (let j = 0; j < end && !lx.END; j++) {
+                    let copy = lx.copy();
+                    let temp_r = { v: null };
+
+                    for (let i = 0, l = this.terms.length; i < l; i++) {
+
+                        let term = this.terms[i];
+
+                        if (!term.parse(copy, rule, temp_r, false)) {
+                            if (!term.OPTIONAL) {
+                                break repeat;
+                            }
+                        }
+                    }
+
+                    if (temp_r.v)
+                        this.mergeValues(r, temp_r);
+
+                    lx.sync(copy);
+
+                    bool = true;
+
+                    if (!this.checkForComma(lx))
+                        break;
+                }
+
+            if (bool)
+                //console.log("JUX", s, bool)
+                return bool;
+        }
+
+        get start() {
+            return isNaN(this.r[0]) ? 1 : this.r[0];
+        }
+        set start(e) {}
+
+        get end() {
+            return isNaN(this.r[1]) ? 1 : this.r[1];
+        }
+        set end(e) {}
+
+        get OPTIONAL() { return this.r[0] === 0 }
+        set OPTIONAL(a) {}
+    }
+    JUX$1.step = 0;
+    class AND$1 extends JUX$1 {
+        innerParser(lx, rule, out_val, r, start, end) {
+
+            const
+                PROTO = new Array(this.terms.length),
+                l = this.terms.length;
+
+            let bool = false;
+
+            repeat:
+                for (let j = 0; j < end && !lx.END; j++) {
+
+                    const
+                        HIT = PROTO.fill(0),
+                        copy = lx.copy(),
+                        temp_r = { v: null };
+
+                    and:
+                        while (true) {
+
+
+
+                            for (let i = 0; i < l; i++) {
+
+                                if (HIT[i] === 2) continue;
+
+                                let term = this.terms[i];
+
+                                if (!term.parse(copy, rule, temp_r, false)) {
+                                    if (term.OPTIONAL)
+                                        HIT[i] = 1;
+                                } else {
+                                    HIT[i] = 2;
+                                    continue and;
+                                }
+                            }
+
+                            if (HIT.reduce((a, v) => a * v, 1) === 0)
+                                break repeat;
+
+                            break
+                        }
+
+
+
+                    lx.sync(copy);
+
+                    if (temp_r.v)
+                        this.mergeValues(r, temp_r);
+
+                    bool = true;
+
+                    if (!this.checkForComma(lx))
+                        break;
+                }
+
+            return bool;
+        }
+    }
+
+    class OR$1 extends JUX$1 {
+        innerParser(lx, rule, out_val, r, start, end) {
+
+            const
+                PROTO = new Array(this.terms.length),
+                l = this.terms.length;
+
+            let
+                bool = false,
+                NO_HIT = true;
+
+            repeat:
+                for (let j = 0; j < end && !lx.END; j++) {
+
+                    const HIT = PROTO.fill(0);
+                    let copy = lx.copy();
+                    let temp_r = { v: null };
+
+                    or:
+                        while (true) {
+                            for (let i = 0; i < l; i++) {
+
+                                if (HIT[i] === 2) continue;
+
+                                let term = this.terms[i];
+
+                                if (term.parse(copy, temp_r, r, false)) {
+                                    NO_HIT = false;
+                                    HIT[i] = 2;
+                                    continue or;
+                                }
+                            }
+
+                            if (NO_HIT) break repeat;
+
+                            break;
+                        }
+
+                    lx.sync(copy);
+
+                    if (temp_r.v)
+                        this.mergeValues(r, temp_r);
+
+                    bool = true;
+
+                    if (!this.checkForComma(lx))
+                        break;
+                }
+
+            return bool;
+        }
+    }
+
+    OR$1.step = 0;
+
+    class ONE_OF$1 extends JUX$1 {
+        innerParser(lx, rule, out_val, r, start, end) {
+
+            let BOOL = false;
+
+            let j;
+            for (j = 0; j < end && !lx.END; j++) {
+                let bool = false;
+                let copy = lx.copy();
+                let temp_r = { v: null };
+
+                for (let i = 0, l = this.terms.length; i < l; i++) {
+                    ////if (!this.terms[i]) console.log(this)
+                    if (this.terms[i].parse(copy, rule, temp_r, false)) {
+                        bool = true;
+                        break;
+                    }
+                }
+
+                if (!bool)
+                    break;
+
+                lx.sync(copy);
+                
+                if (temp_r.v)
+                    this.mergeValues(r, temp_r);
+
+                BOOL = true;
+
+                if (!this.checkForComma(lx))
+                    break;
+            }
+
+            return BOOL;
+        }
+    }
+
+    ONE_OF$1.step = 0;
+
+    class Segment {
+        constructor(parent) {
+            this.parent = null;
+
+            this.css_val = "";
+
+            this.val = document.createElement("span");
+            this.val.classList.add("prop_value");
+
+            this.list = document.createElement("div");
+            this.list.classList.add("prop_list");
+            //this.list.style.display = "none"
+
+            this.ext = document.createElement("button");
+            this.ext.classList.add("prop_extender");
+            this.ext.style.display = "none";
+            this.ext.setAttribute("action","ext");
+
+            this.menu_icon = document.createElement("span");
+            this.menu_icon.classList.add("prop_list_icon");
+            //this.menu_icon.innerHTML = "+"
+            this.menu_icon.style.display = "none";
+            this.menu_icon.setAttribute("superset", false);
+            this.menu_icon.appendChild(this.list);
+
+            this.element = document.createElement("span");
+            this.element.classList.add("prop_segment");
+
+            this.element.appendChild(this.menu_icon);
+            this.element.appendChild(this.val);
+            this.element.appendChild(this.ext);
+
+            this.value_list = [];
+            this.subs = [];
+            this.old_subs = [];
+            this.sib = null;
+            this.value_set;
+            this.HAS_VALUE = false;
+            this.DEMOTED = false;
+
+            this.element.addEventListener("mouseover", e => {
+                //this.setList();
+            });
+        }
+
+        destroy() {
+            this.parent = null;
+            this.element = null;
+            this.val = null;
+            this.list = null;
+            this.ext = null;
+            this.menu_icon = null;
+            this.subs.forEach(e => e.destroy());
+            this.subs = null;
+        }
+
+        reset() {
+            this.list.innerHTML = "";
+            this.val.innerHTML = "";
+            //this.subs.forEach(e => e.destroy);
+            this.subs = [];
+            this.setElement = null;
+            this.changeEvent = null;
+        }
+
+        clearSegments(){
+            if(this.subs.length > 0){
+                this.val.innerHTML = "";
+                for(let i = 0; i < this.subs.length; i++){
+                    let sub = this.subs[i];
+                    sub.destroy();
+                }   
+                this.subs.length = 0;
+            }
+        }
+
+        replaceSub(old_sub, new_sub) {
+            for (let i = 0; i < this.subs.length; i++) {
+                if (this.subs[i] == old_sub) {
+                    this.sub[i] = new_sub;
+                    this.val.replaceChild(old_sub.element, new_sub.element);
+                    return;
+                }
+            }
+        }
+
+        mount(element) {
+            element.appendChild(this.element);
+        }
+
+
+        addSub(seg) {
+            this.menu_icon.setAttribute("superset", true);
+            seg.parent = this;
+            this.subs.push(seg);
+            this.val.appendChild(seg.element);
+        }
+
+        removeSub(seg) {
+            if (seg.parent == this) {
+                for (let i = 0; i < this.subs.length; i++) {
+                    if (this.subs[i] == seg) {
+                        this.val.removeChild(seg.element);
+                        seg.parent = null;
+                        break;
+                    }
+                }
+            }
+            return seg;
+        }
+
+        setList() {
+            //if(this.DEMOTED) debugger
+            if (this.prod && this.list.innerHTML == "") {
+                if (this.DEMOTED || !this.prod.buildList(this.list, this))
+                    this.menu_icon.style.display = "none";
+                else
+                    this.menu_icon.style.display = "inline-block";
+            }
+        }
+        change(e) {
+            if (this.changeEvent)
+                this.changeEvent(this.setElement, this, e);
+        }
+
+        setValueHandler(element, change_event_function) {
+            this.val.innerHTML = "";
+            this.val.appendChild(element);
+
+            if (change_event_function) {
+                this.setElement = element;
+                this.changeEvent = change_event_function;
+                this.setElement.onchange = this.change.bind(this);
+            }
+
+            this.HAS_VALUE = true;
+            //this.menu_icon.style.display = "none";
+            this.setList();
+        }
+
+        set value(v) {
+            this.val.innerHTML = v;
+            this.css_val = v;
+            this.HAS_VALUE = true;
+            this.setList();
+        }
+
+        get value_count() {
+            if (this.subs.length > 0)
+                return this.subs.length
+            return (this.HAS_VALUE) ? 1 : 0;
+        }
+
+        promote() {
+
+        }
+
+        demote() {
+            let seg = new Segment;
+            seg.prod = this.prod;
+            seg.css_val = this.css_val;
+
+            if (this.change_event_function) {
+                seg.changeEvent = this.changeEvent;
+                seg.setElement = this.setElement;
+                seg.setElement.onchange = seg.change.bind(seg);
+            }
+
+            let subs = this.subs;
+
+            if (subs.length > 0) {
+
+                for (let i = 0; i < this.subs.length; i++) 
+                    seg.addSub(this.subs[i]);
+                
+            } else {
+
+
+                let children = this.val.childNodes;
+
+                if (children.length > 0) {
+                    for (let i = 0, l = children.length; i < l; i++) {
+                        seg.val.appendChild(children[0]);
+                    }
+                } else {
+                    seg.val.innerHTML = this.val.innerHTML;
+                }
+            }
+
+
+            this.menu_icon.innerHTML = "";
+            this.menu_icon.style.display = "none";
+            this.menu_icon.setAttribute("superset", false);
+            this.list.innerHTML = "";
+
+            this.reset();
+
+            this.addSub(seg);
+            seg.setList();
+            
+            this.DEMOTED = true;
+        }
+
+        addRepeat(seg) {
+            if (!this.DEMOTED)
+                //Turn self into own sub seg
+                this.demote();
+            this.addSub(seg);
+            seg.setList();
+        }
+
+        repeat(prod = this.prod) {
+            
+            if (this.value_count <= this.end && this.prod.end > 1) {
+                this.ext.style.display = "inline-block";
+
+                let root_x = 0;
+                let width = 0;
+                let diff_width = 0;
+
+                const move = (e) => {
+
+                    let diff = e.clientX - root_x;
+
+                    let EXTENDABLE = this.value_count < this.end;
+                    let RETRACTABLE = this.value_count > 1;
+
+                    if(EXTENDABLE && RETRACTABLE)
+                        this.ext.setAttribute("action","both");
+                    else if(EXTENDABLE)
+                        this.ext.setAttribute("action","ext");
+                    else
+                        this.ext.setAttribute("action","ret");
+
+                    if (diff > 15 && EXTENDABLE) {
+                        let bb = this.element;
+
+                        if (!this.DEMOTED) {
+                            //Turn self into own sub seg
+                            this.demote();
+                        }
+
+                        if (this.old_subs.length > 1) {
+                            this.addSub(this.old_subs.pop());
+                        } else {
+                            prod.default(this, true);
+                        }
+
+                        let w = this.element.clientWidth;
+                        diff_width = w - width;
+                        width = w;
+                        root_x += diff_width;
+
+                        return;
+                    }
+
+                    let last_sub = this.subs[this.subs.length - 1];
+
+                    if (diff < -5 - last_sub.width && RETRACTABLE) {
+                        const sub = this.subs[this.subs.length - 1];
+                        this.old_subs.push(sub);
+                        this.removeSub(sub);
+                        this.subs.length = this.subs.length - 1;
+
+                        let w = this.element.clientWidth;
+                        diff_width = w - width;
+                        width = w;
+
+                        root_x += diff_width;
+                    }
+                };
+
+                const up = (e) => {
+                    window.removeEventListener("pointermove", move);
+                    window.removeEventListener("pointerup", up);
+                };
+
+                this.ext.onpointerdown = e => {
+                    width = this.element.clientWidth;
+                    root_x = e.clientX;
+                    window.addEventListener("pointermove", move);
+                    window.addEventListener("pointerup", up);
+                };
+
+
+                /*
+                this.ext.onclick = e => {
+                    if (this.subs.length == 0)
+                        //Turn self into own sub seg
+                        this.demote()
+
+                    prod.default(this, true);
+
+                    if (this.value_count >= this.end)
+                        this.ext.style.display = "none";
+                }
+                */
+            } else {
+                this.ext.style.display = "none";
+            }
+            this.setList();
+            this.update();
+        }
+
+        get width() {
+            return this.element.clientWidth;
+        }
+
+        update() {
+            if (this.parent)
+                this.parent.update(this);
+            else {
+                let val = this.getValue();
+            }
+        }
+
+        getValue() {
+            let val = "";
+
+            if (this.subs.length > 0)
+                for (let i = 0; i < this.subs.length; i++)
+                    val += " " + this.subs[i].getValue();
+            else
+                val = this.css_val;
+            return val;
+        }
+
+        toString() {
+            return this.getValue();
+        }
+    }
+
+    class ValueTerm$1 {
+
+        constructor(value, getPropertyParser, definitions, productions) {
+
+            if(value instanceof JUX)
+                return value;
+            
+
+            this.value = null;
+
+            const IS_VIRTUAL = { is: false };
+            
+            if(typeof(value) == "string")
+                var u_value = value.replace(/\-/g,"_");
+
+            if (!(this.value = types[u_value]))
+                this.value = getPropertyParser(u_value, IS_VIRTUAL, definitions, productions);
+
+            this.prop = "";
+
+            if (!this.value)
+                return new LiteralTerm$1(value);
+
+            if(this.value instanceof JUX){
+                if (IS_VIRTUAL.is)
+                    this.value.virtual = true;
+                return this.value;
+            }
+
+        }
+
+        seal(){}
+
+        parse(l, rule, r, ROOT = true) {
+            if (typeof(l) == "string")
+                l = whind$1(l);
+
+            if (ROOT) {
+
+                switch(checkDefaults(l)){
+                    case 1:
+                    rule[this.prop] = l.tx;
+                    return true;
+                    case 0:
+                    return false;
+                }
+            }
+
+            let rn = { v: null };
+
+            let v = this.value.parse(l, rule, rn);
+
+            if (rn.v) {
+                if (r)
+                    if (r.v) {
+                        if (Array.isArray(r.v)) {
+                            if (Array.isArray(rn.v) && !this.virtual)
+                                r.v = r.v.concat(rn.v);
+                            else
+                                r.v.push(rn.v);
+                        } else {
+                            if (Array.isArray(rn.v) && !this.virtual)
+                                r.v = ([r.v]).concat(rn.v);
+                            else
+                                r.v = [r.v, rn.v];
+                        }
+                    } else
+                        r.v = (this.virtual) ? [rn.v] : rn.v;
+
+                if (this.prop && !this.virtual)
+                    rule[this.prop] = rn.v;
+
+                return true;
+
+            } else if (v) {
+                if (r)
+                    if (r.v) {
+                        if (Array.isArray(r.v))
+                            r.v.push(v);
+                        else
+                            r.v = [r.v, v];
+                    } else
+                        r.v = v;
+
+                if (this.prop && !this.virtual && ROOT)
+                    rule[this.prop] = v;
+
+                return true;
+            } else
+                return false;
+        }
+
+        get OPTIONAL (){ return false }
+        set OPTIONAL (a){}
+    }
+
+    class LiteralTerm$1 {
+
+        constructor(value, type) {
+            
+            if(type == whind$1.types.string)
+                value = value.slice(1,-1);
+
+            this.value = value;
+            this.prop = null;
+        }
+
+        seal(){}
+
+        parse(l, rule, r, root = true) {
+
+            if (typeof(l) == "string")
+                l = whind$1(l);
+
+            if (root) {
+                switch(checkDefaults(l)){
+                    case 1:
+                    rule[this.prop] = l.tx;
+                    return true;
+                    case 0:
+                    return false;
+                }
+            }
+
+            let v = l.tx;
+            if (v == this.value) {
+                l.next();
+
+                if (r)
+                    if (r.v) {
+                        if (Array.isArray(r.v))
+                            r.v.push(v);
+                        else {
+                            let t = r.v;
+                            r.v = [t, v];
+                        }
+                    } else
+                        r.v = v;
+
+                if (this.prop  && !this.virtual && root)
+                    rule[this.prop] = v;
+
+                return true;
+            }
+            return false;
+        }
+
+        get OPTIONAL (){ return false }
+        set OPTIONAL (a){}
+    }
+
+    class ValueTerm$2 extends ValueTerm$1 {
+
+        default (seg, APPEND = false, value = null) {
+            if (!APPEND) {
+                let element = this.value.valueHandler(value, seg);
+
+                if (value) {
+                    seg.css_val = value.toString();
+                }
+                seg.setValueHandler(element, (ele, seg, event) => {
+                    seg.css_val = element.css_value;
+                    seg.update();
+                });
+            } else {
+                let sub = new Segment();
+                let element = this.value.valueHandler(value, sub);
+                if (value)
+                    sub.css_val = value.toString();
+
+                sub.setValueHandler(element, (ele, seg, event) => {
+                    seg.css_val = element.css_value;
+                    seg.update();
+                });
+                //sub.prod = list;
+                seg.addSub(sub);
+            }
+        }
+
+        buildInput(rep = 1, value) {
+            let seg = new Segment();
+            this.default(seg, false, value);
+            return seg;
+        }
+
+        parseInput(l, seg, APPEND = false) {
+            let val = this.value.parse(l);
+
+            if (val) {
+                this.default(seg, APPEND, val);
+                return true;
+            }
+
+            return val;
+        }
+
+        list(ele, slot) {
+            let element = document.createElement("div");
+            element.classList.add("option");
+            element.innerHTML = this.value.label_name || this.value.name;
+            ele.appendChild(element);
+
+            element.addEventListener("click", e => {
+
+                slot.innerHTML = this.value;
+                if (slot) {
+                    let element = this.value.valueHandler();
+                    element.addEventListener("change", e => {
+
+                        let value = element.value;
+                        slot.css_val = value;
+                        slot.update();
+                    });
+                    slot.setValueHandler(element);
+                } else {
+                    let sub = new Segment();
+                    sub.setValueHandler(this.value);
+                    seg.addSub(sub);
+                }
+            });
+
+            return 1;
+        }
+
+        setSegment(segment) {
+            segment.element.innerHTML = this.value.name;
+        }
+    }
+
+    class BlankTerm extends LiteralTerm$1 {
+
+        default (seg, APPEND = false) {
+
+            if (!APPEND) {
+                seg.value = "  ";
+            } else {
+                let sub = new Segment();
+                sub.value = "";
+                seg.addSub(sub);
+            }
+        }
+
+        list(ele, slot) {
+            let element = document.createElement("div");
+            element.innerHTML = this.value;
+            element.classList.add("option");
+            //        ele.appendChild(element) 
+
+            return 1;
+        }
+
+        parseInput(seg, APPEND = false) {
+            this.default(seg, APPEND);
+            return false;
+        }
+    }
+
+    class LiteralTerm$2 extends LiteralTerm$1 {
+
+        default (seg, APPEND = false) {
+            if (!APPEND) {
+                seg.value = this.value;
+            } else {
+                let sub = new Segment();
+                sub.value = this.value;
+                seg.addSub(sub);
+            }
+        }
+
+        list(ele, slot) {
+            let element = document.createElement("div");
+            element.innerHTML = this.value;
+            element.classList.add("option");
+            ele.appendChild(element);
+            element.addEventListener("click", e => {
+                slot.value = this.value + "";
+                slot.update();
+            });
+
+            return 1;
+        }
+
+        parseInput(l, seg, APPEND = false) {
+            if (typeof(l) == "string")
+                l = whind(l);
+
+            if (l.tx == this.value) {
+                l.next();
+                this.default(seg, APPEND);
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    class SymbolTerm$2 extends LiteralTerm$2 {
+        list() { return 0 }
+
+        parseInput(l, seg, r) {
+            if (typeof(l) == "string")
+                l = whind(l);
+
+            if (l.tx == this.value) {
+                l.next();
+                let sub = new Segment();
+                sub.value = this.value + "";
+                seg.addSub(sub);
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * wick internals.
+     * @class      JUX (name)
+     */
+    class JUX$2 extends JUX$1 {
+        //Adds an entry in options list. 
+
+
+        createSegment() {
+            let segment = new Segment();
+            segment.start = this.start;
+            segment.end = this.end;
+            segment.prod = this;
+            return segment
+        }
+
+        insertBlank(seg){
+            let blank = new BlankTerm;
+            blank.parseInput(seg);
+        }
+
+        buildList(list, slot) {
+
+            if (!slot) {
+                let element = document.createElement("div");
+                element.classList.add("prop_slot");
+                slot = element;
+            }
+
+            if (!list) {
+                list = document.createElement("div");
+                list.classList.add("prop_slot");
+                slot.appendChild(list);
+            }
+            let count = 0;
+            //Build List
+            for (let i = 0, l = this.terms.length; i < l; i++) {
+                count += this.terms[i].list(list, slot);
+            }
+
+            return count > 1;
+        }
+
+        seal() {}
+
+        parseInput(lx, segment, list) {
+
+            if (typeof(lx) == "string")
+                lx = whind$1(lx);
+
+            return this.pi(lx, segment, list);
+        }
+
+        default (segment, EXTENDED = true) {
+            let seg = this.createSegment();
+
+            segment.addSub(seg);
+
+            for (let i = 0, l = this.terms.length; i < l; i++) {
+                this.terms[i].default(seg, l > 1);
+            }
+            seg.setList();
+
+            if (!EXTENDED) seg.repeat();
+        }
+
+        pi(lx, ele, lister = this, start = this.start, end = this.end) {
+            
+            let segment = this.createSegment();
+
+            let bool = false;
+
+            repeat:
+                for (let j = 0; j < end && !lx.END; j++) {
+                    const REPEAT = j > 0;
+
+                    let copy = lx.copy();
+
+                    let seg = (REPEAT) ? new Segment : segment;
+
+                    seg.prod = this;
+
+                    for (let i = 0, l = this.terms.length; i < l; i++) {
+
+                        let term = this.terms[i];
+
+                        if (!term.parseInput(copy, seg, l > 1)) {
+                            if (!term.OPTIONAL) {
+                                break repeat;
+                            }
+                        }
+                    }
+
+                    lx.sync(copy);
+
+                    bool = true;
+
+                    if (!this.checkForComma(lx))
+                        break;
+
+                    if (REPEAT)
+                        segment.addRepeat(seg);
+                }
+
+                this.capParse(segment, ele, bool);
+                
+                return bool;
+        }
+
+        capParse(segment, ele, bool){
+            if (bool) {
+                segment.repeat();
+                if (ele)
+                    ele.addSub(segment);
+                this.last_segment = segment;
+            }else {
+                segment.destroy();
+                if(this.OPTIONAL){
+                    if(ele){
+                        let segment = this.createSegment();
+                        let blank = new BlankTerm();
+                        blank.parseInput(segment);
+                        segment.prod = this;
+                        
+                        segment.repeat();
+                        ele.addSub(segment);
+                    }
+                }
+            }
+        }
+
+        buildInput(repeat = 1, lex) {
+
+            this.last_segment = null;
+            let seg = new Segment;
+            seg.start = this.start;
+            seg.end = this.end;
+            seg.prod = this;
+            this.parseInput(lex, seg, this);
+            return this.last_segment;
+        }
+
+        list(){
+            
+        }
+    }
+
+    class AND$2 extends JUX$2 {
+
+        default (segment, EXTENDED = false) {
+            //let seg = this.createSegment();
+            //segment.addSub(seg);
+            for (let i = 0, l = this.terms.length; i < l; i++) {
+                this.terms[i].default(segment, i > 1);
+            }
+            //seg.repeat();
+        }
+
+        list(ele, slot) {
+
+            let name = (this.name) ? this.name.replace("\_\g", " ") : this.terms.reduce((r, t) => r += " | " + t.name, "");
+            let element = document.createElement("div");
+            element.classList.add("option");
+            element.innerHTML = name;
+            ele.appendChild(element);
+
+            element.addEventListener("click", e => {
+                
+                slot.innerHTML = this.value;
+                if (slot) {
+                    slot.clearSegments();
+                    this.default(slot);
+                    slot.update();
+                } else {
+                    let sub = new Segment();
+                    sub.setValueHandler(this.value);
+                    seg.addSub(sub);
+                }
+            });
+
+            return 1;
+        }
+
+        pi(lx, ele, lister = this, start = 1, end = 1) {
+
+            outer: for (let j = 0; j < end && !lx.END; j++) {
+                for (let i = 0, l = this.terms.length; i < l; i++)
+                    if (!this.terms[i].parseInput(lx, ele)) return (start === 0) ? true : false
+            }
+
+            segment.repeat();
+
+            return true;
+        }
+    }
+    Object.assign(AND$2.prototype, AND$1.prototype);
+
+    class OR$2 extends JUX$2 {
+
+        default (segment, EXTENDED = false) {
+            //let seg = this.createSegment();
+            //segment.addSub(seg);
+            for (let i = 0, l = this.terms.length; i < l; i++) {
+                this.terms[i].default(segment, l > 1);
+            }
+            //seg.repeat();
+        }
+
+        buildList(list, slot) {
+            return false;
+        }
+
+        list(ele, slot) {
+
+            let name = this.terms.reduce((r, t) => r += " | " + t.name, "");
+            let element = document.createElement("div");
+            element.classList.add("option");
+            element.innerHTML = name;
+            ele.appendChild(element);
+
+            element.addEventListener("click", e => {
+                
+                slot.innerHTML = this.value;
+                if (slot) {
+                    slot.clearSegments();
+                    this.default(slot);
+                    slot.update();
+                } else {
+                    let sub = new Segment();
+                    sub.setValueHandler(this.value);
+                    seg.addSub(sub);
+                }
+            });
+
+            return 1;
+        }
+
+        pi(lx, ele, lister = this, start = this.start, end = this.end) {
+            
+            let segment = ele; //this.createSegment()
+
+            let bool = false;
+
+            let OVERALL_BOOL = false;
+
+            for (let j = 0; j < end && !lx.END; j++) {
+                const REPEAT = j > 0;
+
+                let seg = (REPEAT) ? new Segment : segment;
+
+
+                bool = false;
+
+                this.count = (this.count) ? this.count:this.count = 0;
+                
+                outer:
+                //User "factorial" expression to isolate used results in a continous match. 
+                while(true){
+                    for (let i = 0, l = this.terms.length; i < l; i++) {
+                        //if(this.terms[i].count == this.count) continue
+
+                        if (this.terms[i].parseInput(lx, seg, true)) {
+                            this.terms[i].count = this.count;
+                            OVERALL_BOOL = true;
+                            bool = true;
+                            continue outer;
+                        }
+                    }
+                    break;
+                }
+
+                if (!bool && j < start) {
+                    bool = false;
+                } else if (start === 0)
+                    bool = true;
+                    if (REPEAT)
+                segment.addRepeat(seg);
+            }
+
+            if (OVERALL_BOOL) {
+                segment.repeat();
+                //if (ele)
+                //    ele.addSub(segment);
+                this.last_segment = segment;
+            }
+
+
+            return (!bool && start === 0) ? true : bool;
+        }
+    }
+
+    Object.assign(OR$2.prototype, OR$1.prototype);
+
+    class ONE_OF$2 extends JUX$2 {
+
+        default (segment, EXTENDED = false) {
+            let seg = this.createSegment();
+            this.terms[0].default(seg);
+            segment.addSub(seg);
+            seg.setList();
+            if (!EXTENDED) seg.repeat();
+        }
+
+        list(ele, slot) {
+            let name = (this.name) ? this.name.replace(/_/g, " ") : this.terms.reduce((r, t) => r += " | " + t.name, "");
+            let element = document.createElement("div");
+            element.classList.add("option");
+            element.innerHTML = name;
+            ele.appendChild(element);
+
+            element.addEventListener("click", e => {
+                //debugger
+                slot.innerHTML = this.value;
+                if (slot) {
+                    slot.clearSegments();
+                    this.default(slot);
+                    slot.update();
+                } else {
+                    let sub = new Segment();
+                    sub.setValueHandler(this.value);
+                    seg.addSub(sub);
+                }
+            });
+
+            return 1;
+        }
+
+        pi(lx, ele, lister = this, start = this.start, end = this.end) {
+            //List
+            let segment = this.createSegment();
+
+            //Add new
+            let bool = false;
+
+            let j = 0;
+
+            //Parse Input
+            for (; j < end && !lx.END; j++) {
+                const REPEAT = j > 0;
+
+                let seg = segment;
+                
+                if(REPEAT){
+                    seg = new Segment;
+                    seg.prod = this;
+                }
+
+                bool = false;
+
+                for (let i = 0, l = this.terms.length; i < l; i++) {
+                    bool = this.terms[i].parseInput(lx, seg);
+                    if (bool) break;
+                }
+
+                if (!bool) {
+                    if (j < start) {
+                        bool = false;
+                        break;
+                    }
+                }
+                if (REPEAT)
+                    segment.addRepeat(seg);
+
+            }
+
+            this.capParse(segment, ele, bool);
+
+            return  bool;
+        }
+    }
+
+    Object.assign(ONE_OF$2.prototype, ONE_OF$1.prototype);
+
+    var ui_productions = /*#__PURE__*/Object.freeze({
+        JUX: JUX$2,
+        AND: AND$2,
+        OR: OR$2,
+        ONE_OF: ONE_OF$2,
+        LiteralTerm: LiteralTerm$2,
+        ValueTerm: ValueTerm$2,
+        SymbolTerm: SymbolTerm$2
+    });
+
+    /* https://www.w3.org/TR/css-shapes-1/#typedef-basic-shape */
+
+    /**
+     * @brief Path Info
+     * @details Path syntax information for reference
+     * 
+     * MoveTo: M, m
+     * LineTo: L, l, H, h, V, v
+     * Cubic Bézier Curve: C, c, S, s
+     * Quadratic Bézier Curve: Q, q, T, t
+     * Elliptical Arc Curve: A, a
+     * ClosePath: Z, z
+     * 
+     * Capital symbols represent absolute positioning, lowercase is relative
+     */
+
+    /**
+     * CSS Property Definitions https://www.w3.org/TR/css3-values/#value-defs
+     * @alias module:wick~internals.css.property_definitions.
+     * @enum {string}
+     */
+    const property_definitions$1 = {
+
+    	/* https://drafts.csswg.org/css-writing-modes-3/ */
+    		direction:"ltr|rtl",
+    		unicode_bidi:"normal|embed|isolate|bidi-override|isolate-override|plaintext",
+    		writing_mode:"horizontal-tb|vertical-rl|vertical-lr",
+    		text_orientation:"mixed|upright|sideways",
+    		glyph_orientation_vertical:`auto|0deg|90deg|"0"|"90"`,
+    		text_combine_upright:"none|all",
+
+    	/* https://www.w3.org/TR/css-position-3 */ 
+    		position: "static|relative|absolute|sticky|fixed",
+    		top: `<length>|<percentage>|auto`,
+    		left: `<length>|<percentage>|auto`,
+    		bottom: `<length>|<percentage>|auto`,
+    		right: `<length>|<percentage>|auto`,
+    		offset_before: `<length>|<percentage>|auto`,
+    		offset_after: `<length>|<percentage>|auto`,
+    		offset_start: `<length>|<percentage>|auto`,
+    		offset_end: `<length>|<percentage>|auto`,
+    		z_index:"auto|<integer>",
+
+    	/* https://www.w3.org/TR/css-display-3/ */
+    		display: `[ <display_outside> || <display_inside> ] | <display_listitem> | <display_internal> | <display_box> | <display_legacy>`,
+
+    	/* https://www.w3.org/TR/css-box-3 */
+    		margin: `[<length>|<percentage>|0|auto]{1,4}`,
+    		margin_top: `<length>|<percentage>|0|auto`,
+    		margin_right: `<length>|<percentage>|0|auto`,
+    		margin_bottom: `<length>|<percentage>|0|auto`,
+    		margin_left: `<length>|<percentage>|0|auto`,
+
+    		margin_trim:"none|in-flow|all",
+
+    		padding: `[<length>|<percentage>|0|auto]{1,4}`,
+    		padding_top: `<length>|<percentage>|0|auto`,
+    		padding_right: `<length>|<percentage>|0|auto`,
+    		padding_bottom: `<length>|<percentage>|0|auto`,
+    		padding_left: `<length>|<percentage>|0|auto`,
+
+    	/* https://www.w3.org/TR/CSS2/visuren.html */
+    		float: `left|right|none`,
+    		clear: `left|right|both|none`,
+
+    	/* https://drafts.csswg.org/css-sizing-3 todo:implement fit-content(%) function */
+    		box_sizing: `content-box | border-box`,
+    		width: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+    		height: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+    		min_width: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+    		max_width: `<length>|<percentage>|min-content|max-content|fit-content|auto|none`,
+    		min_height: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+    		max_height: `<length>|<percentage>|min-content|max-content|fit-content|auto|none`,
+
+    	/* https://www.w3.org/TR/2018/REC-css-color-3-20180619 */
+    		color: `<color>`,
+    		opacity: `<alphavalue>`,
+
+    	/* https://www.w3.org/TR/css-backgrounds-3/ */
+    		background_color: `<color>`,
+    		background_image: `<bg_image>#`,
+    		background_repeat: `<repeat_style>#`,
+    		background_attachment: `scroll|fixed|local`,
+    		background_position: `[<percentage>|<length>]{1,2}|[top|center|bottom]||[left|center|right]`,
+    		background_clip: `<box>#`,
+    		background_origin: `<box>#`,
+    		background_size: `<bg_size>#`,
+    		background: `[<bg_layer>#,]?<final_bg_layer>`,
+    		border_color: `<color>{1,4}`,
+    		border_top_color: `<color>`,
+    		border_right_color: `<color>`,
+    		border_bottom_color: `<color>`,
+    		border_left_color: `<color>`,
+
+    		border_top_width: `<line_width>`,
+    		border_right_width: `<line_width>`,
+    		border_bottom_width: `<line_width>`,
+    		border_left_width: `<line_width>`,
+    		border_width: `<line_width>{1,4}`,
+
+    		border_style: `<line_style>{1,4}`,
+    		border_top_style: `<line_style>`,
+    		border_right_style: `<line_style>`,
+    		border_bottom_style: `<line_style>`,
+    		border_left_style: `<line_style>`,
+
+    		border_top: `<line_width>||<line_style>||<color>`,
+    		border_right: `<line_width>||<line_style>||<color>`,
+    		border_bottom: `<line_width>||<line_style>||<color>`,
+    		border_left: `<line_width>||<line_style>||<color>`,
+
+    		border_radius: `<length_percentage>{1,4}[ / <length_percentage>{1,4}]?`,
+    		border_top_left_radius: `<length_percentage>{1,2}`,
+    		border_top_right_radius: `<length_percentage>{1,2}`,
+    		border_bottom_right_radius: `<length_percentage>{1,2}`,
+    		border_bottom_left_radius: `<length_percentage>{1,2}`,
+
+    		border: `<line_width>||<line_style>||<color>`,
+
+    		border_image: `<border_image_source>||<border_image_slice>[/<border_image_width>|/<border_image_width>?/<border_image_outset>]?||<border_image_repeat>`,
+    		border_image_source: `none|<image>`,
+    		border_image_slice: `[<number>|<percentage>]{1,4}&&fill?`,
+    		border_image_width: `[<length_percentage>|<number>|auto]{1,4}`,
+    		border_image_outset: `[<length>|<number>]{1,4}`,
+    		border_image_repeat: `[stretch|repeat|round|space]{1,2}`,
+    		box_shadow: `none|<shadow>#`,
+    		line_height: `normal|<percentage>|<length>|<number>`,
+    		overflow: 'visible|hidden|scroll|auto',
+
+    	/* https://www.w3.org/TR/css-fonts-4 */
+    		font_display: "auto|block|swap|fallback|optional",
+    		font_family: `[[<generic_family>|<family_name>],]*[<generic_family>|<family_name>]`,
+    		font_language_override:"normal|<string>",
+    		font: `[[<font_style>||<font_variant>||<font_weight>]?<font_size>[/<line_height>]?<font_family>]|caption|icon|menu|message-box|small-caption|status-bar`,
+    		font_max_size: `<absolute_size>|<relative_size>|<length>|<percentage>|infinity`,
+    		font_min_size: `<absolute_size>|<relative_size>|<length>|<percentage>`,
+    		font_optical_sizing: `auto|none`,
+    		font_pallette: `normal|light|dark|<identifier>`,
+    		font_size: `<absolute_size>|<relative_size>|<length>|<percentage>`,
+    		font_stretch:"<percentage>|normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded",
+    		font_style: `normal|italic|oblique<angle>?`,
+    		font_synthesis:"none|[weight||style]",
+    		font_synthesis_small_caps:"auto|none",
+    		font_synthesis_style:"auto|none",
+    		font_synthesis_weight:"auto|none",
+    		font_variant_alternates:"normal|[stylistic(<feature-value-name>)||historical-forms||styleset(<feature-value-name>#)||character-variant(<feature-value-name>#)||swash(<feature-value-name>)||ornaments(<feature-value-name>)||annotation(<feature-value-name>)]",
+    		font_variant_emoji:"auto|text|emoji|unicode",
+    		font_variation_settings:" normal|[<string><number>]#",
+    		font_size_adjust: `<number>|none`,
+    		
+    		font_weight: `normal|bold|bolder|lighter|100|200|300|400|500|600|700|800|900`,
+
+    	/* https://www.w3.org/TR/css-fonts-3/ */
+    		font_kerning: ` auto | normal | none`,
+    		font_variant: `normal|none|[<common-lig-values>||<discretionary-lig-values>||<historical-lig-values>||<contextual-alt-values>||[small-caps|all-small-caps|petite-caps|all-petite-caps|unicase|titling-caps]||<numeric-figure-values>||<numeric-spacing-values>||<numeric-fraction-values>||ordinal||slashed-zero||<east-asian-variant-values>||<east-asian-width-values>||ruby||[sub|super]]`,
+    		font_variant_ligatures:`normal|none|[<common-lig-values>||<discretionary-lig-values>||<historical-lig-values>||<contextual-alt-values> ]`,
+    		font_variant_position:`normal|sub|super`,
+    		font_variant_caps:`normal|small-caps|all-small-caps|petite-caps|all-petite-caps|unicase|titling-caps`,
+    		font_variant_numeric: "normal | [ <numeric-figure-values> || <numeric-spacing-values> || <numeric-fraction-values> || ordinal || slashed-zero ]",
+    		font_variant_east_asian:" normal | [ <east-asian-variant-values> || <east-asian-width-values> || ruby ]",
+
+    	/* https://drafts.csswg.org/css-text-3 */
+    		hanging_punctuation : "none|[first||[force-end|allow-end]||last]",
+    		hyphens : "none|manual|auto",
+    		letter_spacing: `normal|<length>`,
+    		line_break : "auto|loose|normal|strict|anywhere",
+    		overflow_wrap : "normal|break-word|anywhere",
+    		tab_size : "<length>|<number>",
+    		text_align : "start|end|left|right|center|justify|match-parent|justify-all",
+    		text_align_all : "start|end|left|right|center|justify|match-parent",
+    		text_align_last : "auto|start|end|left|right|center|justify|match-parent",
+    		text_indent : "[[<length>|<percentage>]&&hanging?&&each-line?]",
+    		text_justify : "auto|none|inter-word|inter-character",
+    		text_transform : "none|[capitalize|uppercase|lowercase]||full-width||full-size-kana",
+    		white_space : "normal|pre|nowrap|pre-wrap|break-spaces|pre-line",
+    		word_break : " normal|keep-all|break-all|break-word",
+    		word_spacing : "normal|<length>",
+    		word_wrap : "  normal | break-word | anywhere",
+
+    	/* https://drafts.csswg.org/css-text-decor-3 */
+    		text_decoration: "<text-decoration-line>||<text-decoration-style>||<color>",
+    		text_decoration_color:"<color>",
+    		text_decoration_line:"none|[underline||overline||line-through||blink]",
+    		text_decoration_style:"solid|double|dotted|dashed|wavy",
+    		text_emphasis:"<text-emphasis-style>||<text-emphasis-color>",
+    		text_emphasis_color:"<color>",
+    		text_emphasis_position:"[over|under]&&[right|left]?",
+    		text_emphasis_style:"none|[[filled|open]||[dot|circle|double-circle|triangle|sesame]]|<string>",
+    		text_shadow:"none|[<color>?&&<length>{2,3}]#",
+    		text_underline_position:"auto|[under||[left|right]]",
+
+    	/* Flex Box https://www.w3.org/TR/css-flexbox-1/ */
+    		align_content: `flex-start | flex-end | center | space-between | space-around | stretch`,
+    		align_items: `flex-start | flex-end | center | baseline | stretch`,
+    		align_self: `auto | flex-start | flex-end | center | baseline | stretch`,
+    		flex:`none|[<flex-grow> <flex-shrink>?||<flex-basis>]`,
+    		flex_basis:`content|<width>`,
+    		flex_direction:`row | row-reverse | column | column-reverse`,
+    		flex_flow:`<flex-direction>||<flex-wrap>`,
+    		flex_grow:`<number>`,
+    		flex_shrink:`<number>`,
+    		flex_wrap:`nowrap|wrap|wrap-reverse`,
+    		justify_content :"flex-start | flex-end | center | space-between | space-around",
+    		order:`<integer>`,
+
+    	/* https://drafts.csswg.org/css-transitions-1/ */
+    		transition: `<single_transition>#`,
+    		transition_delay: `<time>#`,
+    		transition_duration: `<time>#`,
+    		transition_property: `none|<single_transition_property>#`,
+    		transition_timing_function: `<timing_function>#`,
+
+    	/* CSS3 Animation https://drafts.csswg.org/css-animations-1/ */
+    		animation: `<single_animation>#`,
+    		animation_name: `[none|<keyframes_name>]#`,
+    		animation_duration: `<time>#`,
+    		animation_timing_function: `<timing_function>#`,
+    		animation_iteration_count: `<single_animation_iteration_count>#`,
+    		animation_direction: `<single_animation_direction>#`,
+    		animation_play_state: `<single_animation_play_state>#`,
+    		animation_delayed: `<time>#`,
+    		animation_fill_mode: `<single_animation_fill_mode>#`,
+
+    	/* https://svgwg.org/svg2-draft/interact.html#PointerEventsProperty */
+    		pointer_events : `visiblePainted|visibleFill|visibleStroke|visible|painted|fill|stroke|all|none|auto`,
+
+    	/* https://drafts.csswg.org/css-ui-3 */
+    		caret_color :"auto|<color>",
+    		cursor:"[[<url> [<number><number>]?,]*[auto|default|none|context-menu|help|pointer|progress|wait|cell|crosshair|text|vertical-text|alias|copy|move|no-drop|not-allowed|grab|grabbing|e-resize|n-resize|ne-resize|nw-resize|s-resize|se-resize|sw-resize|w-resize|ew-resize|ns-resize|nesw-resize|nwse-resize|col-resize|row-resize|all-scroll|zoom-in|zoom-out]]",
+    		outline:"[<outline-color>||<outline-style>||<outline-width>]",
+    		outline_color:"<color>|invert",
+    		outline_offset:"<length>",
+    		outline_style:"auto|<border-style>",
+    		outline_width:"<line-width>",
+    		resize:"none|both|horizontal|vertical",
+    		text_overflow:"clip|ellipsis",
+
+    	/* https://drafts.csswg.org/css-content-3/ */
+    		bookmark_label:"<content-list>",
+    		bookmark_level:"none|<integer>",
+    		bookmark_state:"open|closed",
+    		content:"normal|none|[<content-replacement>|<content-list>][/<string>]?",
+    		quotes:"none|[<string><string>]+",
+    		string_set:"none|[<custom-ident><string>+]#",
+    	
+    	/*https://www.w3.org/TR/CSS22/tables.html*/
+    		caption_side:"top|bottom",
+    		table_layout:"auto|fixed",
+    		border_collapse:"collapse|separate",
+    		border_spacing:"<length><length>?",
+    		empty_cells:"show|hide",
+
+    	/* https://www.w3.org/TR/CSS2/page.html */
+    		page_break_before:"auto|always|avoid|left|right",
+    		page_break_after:"auto|always|avoid|left|right",
+    		page_break_inside:"auto|avoid|left|right",
+    		orphans:"<integer>",
+    		widows:"<integer>",
+
+    	/* https://drafts.csswg.org/css-lists-3 */
+    		counter_increment:"[<custom-ident> <integer>?]+ | none",
+    		counter_reset:"[<custom-ident> <integer>?]+|none",
+    		counter_set:"[<custom-ident> <integer>?]+|none",
+    		list_style:"<list-style-type>||<list-style-position>||<list-style-image>",
+    		list_style_image:"<url>|none",
+    		list_style_position:"inside|outside",
+    		list_style_type:"<counter-style>|<string>|none",
+    		marker_side:"list-item|list-container",
+
+
+    	vertical_align: `baseline|sub|super|top|text-top|middle|bottom|text-bottom|<percentage>|<length>`,
+
+    	/* Visual Effects */
+    	clip: '<shape>|auto',
+    	visibility: `visible|hidden|collapse`,
+    	content: `normal|none|[<string>|<uri>|<counter>|attr(<identifier>)|open-quote|close-quote|no-open-quote|no-close-quote]+`,
+    	quotas: `[<string><string>]+|none`,
+    	counter_reset: `[<identifier><integer>?]+|none`,
+    	counter_increment: `[<identifier><integer>?]+|none`,
+    };
+
+    //import util from "util"
+    const standard_productions$1 = {
+        JUX,
+        AND,
+        OR,
+        ONE_OF,
+        LiteralTerm,
+        ValueTerm,
+        SymbolTerm
+    };
+    function getPropertyParser$1(property_name, IS_VIRTUAL = { is: false }, definitions = null, productions = standard_productions$1) {
+
+        let prop = definitions[property_name];
+
+        if (prop) {
+
+            if (typeof(prop) == "string") {
+                prop = definitions[property_name] = CreatePropertyParser$1(prop, property_name, definitions, productions);
+            }
+            prop.name = property_name;
+            return prop;
+        }
+
+        if (!definitions.__virtual)
+            definitions.__virtual = Object.assign({}, virtual_property_definitions);
+
+        prop = definitions.__virtual[property_name];
+
+        if (prop) {
+
+            IS_VIRTUAL.is = true;
+
+            if (typeof(prop) == "string") {
+                prop = definitions.__virtual[property_name] = CreatePropertyParser$1(prop, "", definitions, productions);
+                prop.virtual = true;
+                prop.name = property_name;
+            }
+
+            return prop;
+        }
+
+        return null;
+    }
+
+
+    function CreatePropertyParser$1(notation, name, definitions, productions) {
+
+        const l = whind$1(notation);
+        const important = { is: false };
+
+        let n = d$2(l, definitions, productions);
+        
+        n.seal();
+
+        //if (n instanceof productions.JUX && n.terms.length == 1 && n.r[1] < 2)
+        //    n = n.terms[0];
+
+        n.prop = name;
+        n.IMP = important.is;
+
+        /*//******** DEV 
+        console.log("")
+        console.log("")
+        console.log(util.inspect(n, { showHidden: false, depth: null })) 
+        //********** END Dev*/
+
+        return n;
+    }
+
+    function d$2(l, definitions, productions, super_term = false, oneof_group = false, or_group = false, and_group = false, important = null) {
+        let term, nt, v;
+        const { JUX: JUX$$1, AND: AND$$1, OR: OR$$1, ONE_OF: ONE_OF$$1, LiteralTerm: LiteralTerm$$1, ValueTerm: ValueTerm$$1, SymbolTerm: SymbolTerm$$1 } = productions;
+
+        while (!l.END) {
+
+            switch (l.ch) {
+                case "]":
+                    return term;
+                    break;
+                case "[":
+
+                    v = d$2(l.next(), definitions, productions, true);
+                    l.assert("]");
+                    v = checkExtensions$1(l, v, productions);
+
+                    if (term) {
+                        if (term instanceof JUX$$1 && term.isRepeating()) term = foldIntoProduction$1(productions, new JUX$$1, term);
+                        term = foldIntoProduction$1(productions, term, v);
+                    } else
+                        term = v;
+                    break;
+
+                case "<":
+
+                    v = new ValueTerm$$1(l.next().tx, getPropertyParser$1, definitions, productions);
+                    l.next().assert(">");
+
+                    v = checkExtensions$1(l, v, productions);
+
+                    if (term) {
+                        if (term instanceof JUX$$1 /*&& term.isRepeating()*/) term = foldIntoProduction$1(productions, new JUX$$1, term);
+                        term = foldIntoProduction$1(productions, term, v);
+                    } else {
+                        term = v;
+                    }
+                    break;
+
+                case "&":
+
+                    if (l.pk.ch == "&") {
+
+                        if (and_group)
+                            return term;
+
+                        nt = new AND$$1();
+
+                        if (!term) throw new Error("missing term!");
+
+                        nt.terms.push(term);
+
+                        l.sync().next();
+
+                        while (!l.END) {
+                            nt.terms.push(d$2(l, definitions, productions, super_term, oneof_group, or_group, true, important));
+                            if (l.ch !== "&" || l.pk.ch !== "&") break;
+                            l.a("&").a("&");
+                        }
+
+                        return nt;
+                    }
+                    break;
+                case "|":
+
+                    {
+                        if (l.pk.ch == "|") {
+
+                            if (or_group || and_group)
+                                return term;
+
+                            nt = new OR$$1();
+
+                            nt.terms.push(term);
+
+                            l.sync().next();
+
+                            while (!l.END) {
+                                nt.terms.push(d$2(l, definitions, productions, super_term, oneof_group, true, and_group, important));
+                                if (l.ch !== "|" || l.pk.ch !== "|") break;
+                                l.a("|").a("|");
+                            }
+
+                            return nt;
+
+                        } else {
+
+                            if (oneof_group || or_group || and_group)
+                                return term;
+
+                            nt = new ONE_OF$$1();
+
+                            nt.terms.push(term);
+
+                            l.next();
+
+                            while (!l.END) {
+                                nt.terms.push(d$2(l, definitions, productions, super_term, true, or_group, and_group, important));
+                                if (l.ch !== "|") break;
+                                l.a("|");
+                            }
+
+                            return nt;
+                        }
+                    }
+                    break;
+                default:
+
+                    v = (l.ty == l.types.symbol) ? new SymbolTerm$$1(l.tx) : new LiteralTerm$$1(l.tx, l.ty);
+                    l.next();
+                    v = checkExtensions$1(l, v, productions);
+
+                    if (term) {
+                        if (term instanceof JUX$$1 /*&& (term.isRepeating() || term instanceof ONE_OF)*/) term = foldIntoProduction$1(productions, new JUX$$1, term);
+                        term = foldIntoProduction$1(productions, term, v);
+                    } else {
+                        term = v;
+                    }
+            }
+        }
+
+        return term;
+    }
+
+    function checkExtensions$1(l, term, productions) {
+        outer:
+        while (true) {
+
+            switch (l.ch) {
+                case "!":
+                    /* https://www.w3.org/TR/CSS21/cascade.html#important-rules */
+                    term.IMPORTANT = true;
+                    l.next();
+                    continue outer;
+                case "{":
+                    term = foldIntoProduction$1(productions, term);
+                    term.r[0] = parseInt(l.next().tx);
+                    if (l.next().ch == ",") {
+                        l.next();
+                        if (l.pk.ch == "}") {
+
+                            term.r[1] = parseInt(l.tx);
+                            l.next();
+                        } else {
+                            term.r[1] = Infinity;
+                        }
+                    } else
+                        term.r[1] = term.r[0];
+                    l.a("}");
+                    break;
+                case "*":
+                    term = foldIntoProduction$1(productions, term);
+                    term.r[0] = 0;
+                    term.r[1] = Infinity;
+                    l.next();
+                    break;
+                case "+":
+                    term = foldIntoProduction$1(productions, term);
+                    term.r[0] = 1;
+                    term.r[1] = Infinity;
+                    l.next();
+                    break;
+                case "?":
+                    term = foldIntoProduction$1(productions, term);
+                    term.r[0] = 0;
+                    term.r[1] = 1;
+                    l.next();
+                    break;
+                case "#":
+                    term = foldIntoProduction$1(productions, term);
+                    term.terms.push(new SymbolTerm(","));
+                    term.r[0] = 1;
+                    term.r[1] = Infinity;
+                    term.REQUIRE_COMMA = true;
+                    l.next();
+                    if (l.ch == "{") {
+                        term.r[0] = parseInt(l.next().tx);
+                        term.r[1] = parseInt(l.next().a(",").tx);
+                        l.next().a("}");
+                    }
+                    break;
+            }
+            break;
+        }
+        return term;
+    }
+
+    function foldIntoProduction$1(productions, term, new_term = null) {
+        if (term) {
+            if (!(term instanceof productions.JUX)) {
+                let nr = new productions.JUX();
+                nr.terms.push(term);
+                term = nr;
+            }
+            if (new_term) {
+                term.seal();
+                term.terms.push(new_term);
+            }
+            return term;
+        }
+        return new_term;
+    }
+
+    function createCache(cacher){
+        let cache = null;
+        const destroy = cacher.prototype.destroy;
+        const init = cacher.prototype.init;
+
+        cacher.prototype.destroy = function(...args){
+
+            if(destroy)
+                destroy.call(this, ...args);
+
+            this.next_cached = cache;
+            cache = this;
+        };
+
+        return function(...args){
+                let r;
+            if(cache){
+                r = cache;
+                cache = cache.next_cached;
+                r.next_cached = null;
+                init.call(r,...args);
+            }else{
+                r = new cacher(...args);
+                r.next_cached = null;
+                r.CACHED = true;
+            }
+            return r;
+        };
+    }
+
+    const props = Object.assign({}, property_definitions$1);
+
+    function dragstart$1(e){
+        event.dataTransfer.setData('text/plain',null);
+        UIProp.dragee = this;
+    }
+
+    class UIProp {
+        constructor(type,  parent) {
+            // Predefine all members of this object.
+            this.hash = 0;
+            this.type = "";
+            this.parent = null;
+            this._value = null;
+            this.setupElement(type);
+            this.init(type, parent);
+        }
+
+        init(type,  parent){
+            this.type = type;
+            this.parent = parent;
+        }
+
+        destroy(){
+            this.hash = 0;
+            this.type = "";
+            this.parent = null;
+            this._value = null;
+            this.type = null;
+            this.parent = null;
+            this.unmount();
+        }
+
+        build(type, value){
+            this.element.innerHTML ="";
+            this.element.appendChild(this.label);
+            let pp = getPropertyParser$1(type, undefined, props, ui_productions);
+            this._value = pp.buildInput(1, whind$1(value));
+            this._value.parent = this;
+            this._value.mount(this.element);
+        }
+
+        update(value) {
+            this.parent.update(this.type, value.toString());
+        }
+
+        mount(element) {
+            if (element instanceof HTMLElement)
+                element.appendChild(this.element);
+        }
+
+        unmount() {
+            if (this.element.parentElement)
+                this.element.parentElement.removeChild(this.element);
+        }
+
+        setupElement(type) {
+            this.element = document.createElement("div");
+            this.element.setAttribute("draggable", "true");
+            this.element.classList.add("prop");
+            this.element.addEventListener("dragstart", dragstart$1.bind(this));
+            this.label = document.createElement("span");
+            this.label.classList.add("prop_label");
+            this.label.innerHTML = `${type.replace(/[\-\_]/g, " ")}`;
+        }
+
+        get value(){
+            return this._value.toString();
+        }
+    }
+
+    UIProp = createCache(UIProp);
+
+    const props$1 = Object.assign({}, property_definitions$1);
 
     /**
      * Container for all rules found in a CSS string or strings.
@@ -5193,6 +7980,9 @@ ${is_iws}`;
         }
 
         parse(lex, root) {
+            if (typeof(lex) == "string")
+                lex = whind$1(lex);
+
             if (lex.sl > 0) {
 
                 if (!root && root !== null) {
@@ -5202,6 +7992,7 @@ ${is_iws}`;
 
                 return this.fch.parse(lex, this).then(e => {
                     this._setREADY_();
+                    this.updated();
                     return this;
                 });
             }
@@ -5252,13 +8043,13 @@ ${is_iws}`;
 
     CSSParser.types = types;
 
-    const 
-        CSS_Length$1 = CSSParser.types.length,
-        CSS_Percentage$1 = CSSParser.types.percentage,
-        CSS_Color$1 = CSSParser.types.color,
-        CSS_Transform2D$1 = CSSParser.types.transform2D,
-        CSS_Path$1 = CSSParser.types.path,
-        CSS_Bezier$1 = CSSParser.types.cubic_bezier,
+    const
+        CSS_Length$2 = CSSParser.types.length,
+        CSS_Percentage$2 = CSSParser.types.percentage,
+        CSS_Color$2 = CSSParser.types.color,
+        CSS_Transform2D$2 = CSSParser.types.transform2D,
+        CSS_Path$2 = CSSParser.types.path,
+        CSS_Bezier$2 = CSSParser.types.cubic_bezier,
 
         Animation = (function anim() {
 
@@ -5299,7 +8090,7 @@ ${is_iws}`;
                     let IS_ARRAY = Array.isArray(keys);
 
                     if (prop_name == "transform")
-                        this.type = CSS_Transform2D$1;
+                        this.type = CSS_Transform2D$2;
                     else {
                         this.type = (IS_ARRAY) ? this.getType(keys[0].value || keys[0].v) : this.getType(keys.value || keys.v);
                     }
@@ -5326,7 +8117,7 @@ ${is_iws}`;
                         let cs = window.getComputedStyle(obj);
                         let value = cs.getPropertyValue(name);
 
-                        if (this.type == CSS_Percentage$1) {
+                        if (this.type == CSS_Percentage$2) {
                             if (obj.parentElement) {
                                 let pcs = window.getComputedStyle(obj.parentElement);
                                 let pvalue = pcs.getPropertyValue(name);
@@ -5348,12 +8139,12 @@ ${is_iws}`;
                             return lerpNumber;
                             break
                         case "string":
-                            if (CSS_Length$1._verify_(value))
-                                return CSS_Length$1;
-                            if (CSS_Percentage$1._verify_(value))
-                                return CSS_Percentage$1;
-                            if (CSS_Color$1._verify_(value))
-                                return CSS_Color$1;
+                            if (CSS_Length$2._verify_(value))
+                                return CSS_Length$2;
+                            if (CSS_Percentage$2._verify_(value))
+                                return CSS_Percentage$2;
+                            if (CSS_Color$2._verify_(value))
+                                return CSS_Color$2;
                             //intentional
                         case "object":
                             return lerpNonNumeric;
@@ -5572,7 +8363,7 @@ ${is_iws}`;
 
                 toCSSString(keyfram_id) {
 
-                    const strings = [`.${keyfram_id}{animation:${keyfram_id} ${this.duration}ms ${Animation.easing.ease_out.toString()}}`, `@keyframes ${keyfram_id}{`];
+                    const strings = [`.${keyfram_id}{animation:${keyfram_id} ${this.duration}ms ${Animation.ease_out.toString()}}`, `@keyframes ${keyfram_id}{`];
 
                     // TODO: Use some function to determine the number of steps that should be taken
                     // This should reflect the different keyframe variations that can occure between
@@ -5711,18 +8502,18 @@ ${is_iws}`;
                 get USE_TRANSFORM() { return USE_TRANSFORM; },
 
                 linear: Linear,
-                ease: new CSS_Bezier$1(0.25, 0.1, 0.25, 1),
-                ease_in: new CSS_Bezier$1(0.42, 0, 1, 1),
-                ease_out: new CSS_Bezier$1(0.2, 0.8, 0.3, 0.99),
-                ease_in_out: new CSS_Bezier$1(0.42, 0, 0.58, 1),
-                overshoot: new CSS_Bezier$1(0.2, 1.5, 0.2, 0.8),
-                custom: (x1, y1, x2, y2) => new CSS_Bezier$1(x1, y1, x2, y2)
+                ease: new CSS_Bezier$2(0.25, 0.1, 0.25, 1),
+                ease_in: new CSS_Bezier$2(0.42, 0, 1, 1),
+                ease_out: new CSS_Bezier$2(0.2, 0.8, 0.3, 0.99),
+                ease_in_out: new CSS_Bezier$2(0.42, 0, 0.58, 1),
+                overshoot: new CSS_Bezier$2(0.2, 1.5, 0.2, 0.8),
+                custom: (x1, y1, x2, y2) => new CSS_Bezier$2(x1, y1, x2, y2)
             });
 
             return GlowFunction;
         })();
 
-    const CSS_Transform2D$2 = CSSParser.types.transform2D;
+    const CSS_Transform2D$3 = CSSParser.types.transform2D;
 
     function setTo(to, seq, duration, easing, from){
 
@@ -5837,7 +8628,7 @@ ${is_iws}`;
         Transform one element from another back to itself
         @alias module:wick~internals.TransformTo
     */
-    function TransformTo(element_from, element_to, duration = 500, easing = Animation.easing.linear, HIDE_OTHER = false) {
+    function TransformTo(element_from, element_to, duration = 500, easing = Animation.linear, HIDE_OTHER = false) {
         let rect = element_from.getBoundingClientRect();
         let cs = window.getComputedStyle(element_from, null);
         let margin_left = parseFloat(cs.getPropertyValue("margin"));
@@ -5855,7 +8646,7 @@ ${is_iws}`;
 
         if (!element_to) {
 
-            let a = (seq) => (element_to, duration = 500, easing = Animation.easing.linear,  HIDE_OTHER = false) => {
+            let a = (seq) => (element_to, duration = 500, easing = Animation.linear,  HIDE_OTHER = false) => {
                 setTo(element_to, seq, duration, easing, element_from);
                 seq.duration = duration;
             console.log(seq.toCSSString("MumboJumbo"));
@@ -6085,11 +8876,6 @@ ${is_iws}`;
     	transformTo:(...args) => TransformTo(...args)
     });
 
-    exports.Transitioneer = Transitioneer;
-    exports.TransformTo = TransformTo;
-    exports.Animation = Animation;
-    exports.default = Animation;
+    return Animation;
 
-    return exports;
-
-}({}));
+}());

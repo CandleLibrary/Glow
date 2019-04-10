@@ -76,7 +76,12 @@ const
                 if (type == CSS_STYLE) {
                     let name = prop_name.replace(/[A-Z]/g, (match) => "-" + match.toLowerCase());
                     let cs = window.getComputedStyle(obj);
+
+                    //Try to get computed value. If it does not exist, then get value from the style attribtute.
                     let value = cs.getPropertyValue(name);
+                    
+                    if(!value)
+                        value = obj.style[prop_name];
 
                     if (this.type == CSS_Percentage) {
                         if (obj.parentElement) {
@@ -86,7 +91,6 @@ const
                             value = (ratio * 100);
                         }
                     }
-
 
                     this.current_val = new this.type(value);
 

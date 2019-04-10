@@ -5295,21 +5295,24 @@ const
                 this.keys = [];
                 this.current_val = null;
 
-                let IS_ARRAY = Array.isArray(keys);
+                const
+                    IS_ARRAY = Array.isArray(keys),
+                    k0 = IS_ARRAY ? keys[0] : keys,
+                    k0_val = typeof(k0.value) !== "undefined" ? k0.value : k0.v;
 
                 if (prop_name == "transform")
                     this.type = CSS_Transform2D$1;
                 else {
-                    this.type = (IS_ARRAY) ? this.getType(keys[0].value || keys[0].v) : this.getType(keys.value || keys.v);
+                    this.type = this.getType(k0_val);
                 }
 
                 this.getValue(obj, prop_name, type);
 
                 let p = this.current_val;
 
-                if (IS_ARRAY) {
+                if (IS_ARRAY)
                     keys.forEach(k => p = this.addKey(k, p));
-                } else
+                else
                     this.addKey(keys, p);
             }
 
@@ -5334,6 +5337,7 @@ const
                         }
                     }
 
+
                     this.current_val = new this.type(value);
 
                 } else {
@@ -5342,6 +5346,7 @@ const
             }
 
             getType(value) {
+
                 switch (typeof(value)) {
                     case "number":
                         return lerpNumber;
@@ -5995,8 +6000,8 @@ const Transitioneer = (function() {
         start(time = 0, speed = 1, reverse = false) {
 
             for (let i = 0; i < this.in_seq.length; i++) {
-                let seq = this.in_seq[i];
-                seq.beginCSSAnimation();
+                // let seq = this.in_seq[i];
+                // seq.beginCSSAnimation()
             }
 
             this.time = time;
@@ -6005,7 +6010,7 @@ const Transitioneer = (function() {
 
             if (this.reverse)
                 this.speed = -this.speed;
-            return
+
             return new Promise((res, rej) => {
                 if (this.duration > 0)
                     this.scheduledUpdate(0, 0);
@@ -6016,6 +6021,8 @@ const Transitioneer = (function() {
         }
 
         play(t) {
+
+
             this.PLAY = true;
             let time = this.duration * t;
             this.step(time);
@@ -6028,9 +6035,10 @@ const Transitioneer = (function() {
         }
 
         step(t) {
+            
             for (let i = 0; i < this.out_seq.length; i++) {
                 let seq = this.out_seq[i];
-                if(!seq.run(t) && !seq.FINISHED){
+                if (!seq.run(t) && !seq.FINISHED) {
                     seq.issueEvent("stopped");
                     seq.FINISHED = true;
                 }
@@ -6040,7 +6048,7 @@ const Transitioneer = (function() {
 
             for (let i = 0; i < this.in_seq.length; i++) {
                 let seq = this.in_seq[i];
-                if(!seq.run(t) && !seq.FINISHED){
+                if (!seq.run(t) && !seq.FINISHED) {
                     seq.issueEvent("stopped");
                     seq.FINISHED = true;
                 }

@@ -132,8 +132,8 @@ const Transitioneer = (function() {
         start(time = 0, speed = 1, reverse = false) {
 
             for (let i = 0; i < this.in_seq.length; i++) {
-                let seq = this.in_seq[i];
-                seq.beginCSSAnimation()
+                // let seq = this.in_seq[i];
+                // seq.beginCSSAnimation()
             }
 
             this.time = time;
@@ -142,7 +142,7 @@ const Transitioneer = (function() {
 
             if (this.reverse)
                 this.speed = -this.speed;
-            return
+
             return new Promise((res, rej) => {
                 if (this.duration > 0)
                     this.scheduledUpdate(0, 0);
@@ -153,6 +153,8 @@ const Transitioneer = (function() {
         }
 
         play(t) {
+
+
             this.PLAY = true;
             let time = this.duration * t;
             this.step(time);
@@ -165,9 +167,10 @@ const Transitioneer = (function() {
         }
 
         step(t) {
+            
             for (let i = 0; i < this.out_seq.length; i++) {
                 let seq = this.out_seq[i];
-                if(!seq.run(t) && !seq.FINISHED){
+                if (!seq.run(t) && !seq.FINISHED) {
                     seq.issueEvent("stopped");
                     seq.FINISHED = true;
                 }
@@ -177,7 +180,7 @@ const Transitioneer = (function() {
 
             for (let i = 0; i < this.in_seq.length; i++) {
                 let seq = this.in_seq[i];
-                if(!seq.run(t) && !seq.FINISHED){
+                if (!seq.run(t) && !seq.FINISHED) {
                     seq.issueEvent("stopped");
                     seq.FINISHED = true;
                 }

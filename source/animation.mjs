@@ -209,6 +209,9 @@ const
                 this.FINISHED = false;
                 this.CSS_ANIMATING = false;
                 this.events = {};
+                this.SHUTTLE = false;
+                this.REPEAT = 0;
+                this.SCALE = 1;
 
                 switch (this.type) {
                     case CSS_STYLE:
@@ -282,23 +285,51 @@ const
                         prop.run(this.obj, n, i, this.type);
                 }
 
-                if (i >= this.duration)
+                if (i >= this.duration || i <= 0)
                     return false;
 
                 return true;
             }
 
             scheduledUpdate(a, t) {
-                if (this.run(this.time += t))
+
+                this.time += t * this.SCALE;
+                if (this.run(this.time)){
                     spark.queueUpdate(this);
-                else
+                }
+                else if(this.REPEAT){
+                    let scale = this.SCALE;
+                    
+                    this.REPEAT--;
+
+                    if(this.SHUTTLE)
+                        scale = -scale
+                    
+                    let from = (scale > 0) ? 0 : this.duration;
+                         
+                    this.play(scale, from)
+                }else
                     this.issueEvent("stopped");
+
             }
 
-            play(from = 0) {
+            //TODO: use repeat to continually play back numation 
+            repeat(count = 1){
+                this.REPEAT = Math.max(0,parseFloat(count));
+                return this;
+            } 
+             //TODO: allow scale to control playback speed and direction
+            play(scale = 1, from = 0) {
+                this.SCALE = scale;
                 this.time = from;
                 spark.queueUpdate(this);
                 this.issueEvent("started");
+                return this;
+            }
+
+            shuttle(SHUTTLE = true){
+                this.SHUTTLE = !!SHUTTLE;
+                return this;
             }
 
             addEventListener(event, listener) {
@@ -388,6 +419,9 @@ const
                 this.seq = [];
                 this.time = 0;
                 this.duration = 0;
+                this.SHUTTLE = false;
+                this.REPEAT = 0;
+                this.SCALE = 1;
             }
 
             destroy() {
@@ -413,15 +447,44 @@ const
             }
 
             scheduledUpdate(a, t) {
-                this.time += t
+                this.time += t * this.SCALE;
                 if (this.run(this.time))
                     spark.queueUpdate(this);
+                else if(repeat){
+                    let scale = this.scale;
+                    
+                    repeat--;
+
+                    if(this.SHUTTLE)
+                        scale = -scale
+                    
+                    let from = (scale > 0) ? 0 : this.duration;
+                         
+                    this.play(scale, from)
+                }
             }
 
-            play(from = 0) {
-                this.time = 0;
-                spark.queueUpdate(this);
+            shuttle(SHUTTLE = true){
+                this.SHUTTLE = !!SHUTTLE;
+                return this;
             }
+
+            stop(){
+                return this;
+            }
+
+            //TODO: allow scale to control playback speed and direction
+            play(scale = 1, from = 0) {
+                this.SCALE = 0;
+                this.time = from;
+                spark.queueUpdate(this);
+                return this;
+            }
+            //TODO: use repeat to continually play back numation 
+            repeat(count = 0){
+                this.REPEAT = Math.max(0,parseInt(count));
+                return this;
+            }    
         }
 
         const GlowFunction = function() {

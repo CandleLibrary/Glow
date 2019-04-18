@@ -327,6 +327,14 @@ const
                 return this;
             }
 
+            set(i=0){
+                if(i >= 0)
+                    this.run(i*this.duration);
+                else
+                    this.run(this.duration - i*this.duration);
+            }
+
+
             shuttle(SHUTTLE = true){
                 this.SHUTTLE = !!SHUTTLE;
                 return this;
@@ -471,6 +479,13 @@ const
 
             stop(){
                 return this;
+            }
+
+            set(i=0){
+                if(i >= 0)
+                    this.run(i*this.duration);
+                else
+                    this.run(this.duration - i*this.duration);
             }
 
             //TODO: allow scale to control playback speed and direction

@@ -511,134 +511,134 @@ const SPACE = 32;
  * 11. DATA_LINK
  */ 
 const jump_table = [
-7, 	 	/* A */
-7, 	 	/* a */
+7, 	 	/* NULL */
+7, 	 	/* START_OF_HEADER */
+7, 	 	/* START_OF_TEXT */
+7, 	 	/* END_OF_TXT */
+7, 	 	/* END_OF_TRANSMISSION */
+7, 	 	/* ENQUIRY */
 7, 	 	/* ACKNOWLEDGE */
-7, 	 	/* AMPERSAND */
-7, 	 	/* ASTERISK */
-7, 	 	/* AT */
-7, 	 	/* B */
-7, 	 	/* b */
-7, 	 	/* BACKSLASH */
-4, 	 	/* BACKSPACE */
-6, 	 	/* BELL */
-7, 	 	/* C */
-7, 	 	/* c */
-5, 	 	/* CANCEL */
-7, 	 	/* CARET */
-11, 	/* CARRIAGE_RETURN */
-7, 	 	/* CLOSE_CURLY */
-7, 	 	/* CLOSE_PARENTH */
-7, 	 	/* CLOSE_SQUARE */
-7, 	 	/* COLON */
-7, 	 	/* COMMA */
-7, 	 	/* d */
-7, 	 	/* D */
-7, 	 	/* DATA_LINK_ESCAPE */
-7, 	 	/* DELETE */
+7, 	 	/* BELL */
+7, 	 	/* BACKSPACE */
+4, 	 	/* HORIZONTAL_TAB */
+6, 	 	/* LINEFEED */
+7, 	 	/* VERTICAL_TAB */
+7, 	 	/* FORM_FEED */
+5, 	 	/* CARRIAGE_RETURN */
+7, 	 	/* SHIFT_OUT */
+7, 		/* SHIFT_IN */
+11,	 	/* DATA_LINK_ESCAPE */
 7, 	 	/* DEVICE_CTRL_1 */
 7, 	 	/* DEVICE_CTRL_2 */
 7, 	 	/* DEVICE_CTRL_3 */
 7, 	 	/* DEVICE_CTRL_4 */
-7, 	 	/* DOLLAR */
-7, 	 	/* DOUBLE_QUOTE */
-7, 	 	/* e */
-3, 	 	/* E */
-8, 	 	/* EIGHT */
-2, 	 	/* END_OF_MEDIUM */
-7, 	 	/* END_OF_TRANSMISSION */
+7, 	 	/* NEGATIVE_ACKNOWLEDGE */
+7, 	 	/* SYNCH_IDLE */
 7, 	 	/* END_OF_TRANSMISSION_BLOCK */
-8, 	 	/* END_OF_TXT */
-8, 	 	/* ENQUIRY */
-2, 	 	/* EQUAL */
-9, 	 	/* ESCAPE */
-10, 	 /* EXCLAMATION */
-8, 	 	/* f */
-8, 	 	/* F */
+7, 	 	/* CANCEL */
+7, 	 	/* END_OF_MEDIUM */
+7, 	 	/* SUBSTITUTE */
+7, 	 	/* ESCAPE */
 7, 	 	/* FILE_SEPERATOR */
-7, 	 	/* FIVE */
-7, 	 	/* FORM_FEED */
+7, 	 	/* GROUP_SEPERATOR */
+7, 	 	/* RECORD_SEPERATOR */
+7, 	 	/* UNIT_SEPERATOR */
+3, 	 	/* SPACE */
+8, 	 	/* EXCLAMATION */
+2, 	 	/* DOUBLE_QUOTE */
+7, 	 	/* HASH */
+7, 	 	/* DOLLAR */
+8, 	 	/* PERCENT */
+8, 	 	/* AMPERSAND */
+2, 	 	/* QUOTE */
+9, 	 	/* OPEN_PARENTH */
+10, 	 /* CLOSE_PARENTH */
+8, 	 	/* ASTERISK */
+8, 	 	/* PLUS */
+7, 	 	/* COMMA */
+7, 	 	/* HYPHEN */
+7, 	 	/* PERIOD */
 7, 	 	/* FORWARD_SLASH */
+0, 	 	/* ZERO */
+0, 	 	/* ONE */
+0, 	 	/* TWO */
+0, 	 	/* THREE */
 0, 	 	/* FOUR */
-0, 	 	/* g */
-0, 	 	/* G */
-0, 	 	/* GRAVE */
-0, 	 	/* GREATER_THAN */
-0, 	 	/* GROUP_SEPERATOR */
-0, 	 	/* h */
-0, 	 	/* H */
-0, 	 	/* HASH */
-0, 	 	/* HORIZONTAL_TAB */
-8, 	 	/* HYPHEN */
-7, 	 	/* i */
-8, 	 	/* I */
-8, 	 	/* j */
-8, 	 	/* J */
-7, 	 	/* k */
-7, 	 	/* K */
-1, 	 	/* l */
+0, 	 	/* FIVE */
+0, 	 	/* SIX */
+0, 	 	/* SEVEN */
+0, 	 	/* EIGHT */
+0, 	 	/* NINE */
+8, 	 	/* COLON */
+7, 	 	/* SEMICOLON */
+8, 	 	/* LESS_THAN */
+8, 	 	/* EQUAL */
+8, 	 	/* GREATER_THAN */
+7, 	 	/* QMARK */
+7, 	 	/* AT */
+1, 	 	/* A*/
+1, 	 	/* B */
+1, 	 	/* C */
+1, 	 	/* D */
+1, 	 	/* E */
+1, 	 	/* F */
+1, 	 	/* G */
+1, 	 	/* H */
+1, 	 	/* I */
+1, 	 	/* J */
+1, 	 	/* K */
 1, 	 	/* L */
-1, 	 	/* LESS_THAN */
-1, 	 	/* LINE_FEED */
-1, 	 	/* m */
 1, 	 	/* M */
-1, 	 	/* n */
 1, 	 	/* N */
-1, 	 	/* NEGATIVE_ACKNOWLEDGE */
-1, 	 	/* NINE */
-1, 	 	/* NULL */
-1, 	 	/* o */
 1, 	 	/* O */
-1, 	 	/* ONE */
-1, 	 	/* OPEN_CURLY */
-1, 	 	/* OPEN_PARENTH */
-1, 	 	/* OPEN_SQUARE */
-1, 	 	/* p */
 1, 	 	/* P */
-1, 	 	/* PERCENT */
-1, 	 	/* PERIOD */
-1, 	 	/* PLUS */
-1, 	 	/* q */
 1, 	 	/* Q */
-1, 	 	/* QMARK */
-1, 	 	/* QUOTE */
-9, 	 	/* r */
-7, 	 	/* R */
-10, 	/* RECORD_SEPERATOR */
-7, 	 	/* s */
-7, 	 	/* S */
-2, 	 	/* SEMICOLON */
-1, 	 	/* SEVEN */
-1, 	 	/* SHIFT_IN */
-1, 	 	/* SHIFT_OUT */
-1, 	 	/* SIX */
-1, 	 	/* SPACE */
-1, 	 	/* START_OF_HEADER */
-1, 	 	/* START_OF_TEXT */
-1, 	 	/* SUBSTITUTE */
-1, 	 	/* SYNCH_IDLE */
-1, 	 	/* t */
+1, 	 	/* R */
+1, 	 	/* S */
 1, 	 	/* T */
-1, 	 	/* THREE */
-1, 	 	/* TILDE */
-1, 	 	/* TWO */
-1, 	 	/* u */
 1, 	 	/* U */
-1, 	 	/* UNDER_SCORE */
-1, 	 	/* UNIT_SEPERATOR */
-1, 	 	/* v */
 1, 	 	/* V */
-1, 	 	/* VERTICAL_BAR */
-1, 	 	/* VERTICAL_TAB */
-1, 	 	/* w */
 1, 	 	/* W */
-1, 	 	/* x */
 1, 	 	/* X */
-9, 	 	/* y */
-7, 	 	/* Y */
-10,  	/* z */
-7,  	/* Z */
-7 		/* ZERO */
+1, 	 	/* Y */
+1, 	 	/* Z */
+9, 	 	/* OPEN_SQUARE */
+7, 	 	/* TILDE */
+10, 	/* CLOSE_SQUARE */
+7, 	 	/* CARET */
+7, 	 	/* UNDER_SCORE */
+2, 	 	/* GRAVE */
+1, 	 	/* a */
+1, 	 	/* b */
+1, 	 	/* c */
+1, 	 	/* d */
+1, 	 	/* e */
+1, 	 	/* f */
+1, 	 	/* g */
+1, 	 	/* h */
+1, 	 	/* i */
+1, 	 	/* j */
+1, 	 	/* k */
+1, 	 	/* l */
+1, 	 	/* m */
+1, 	 	/* n */
+1, 	 	/* o */
+1, 	 	/* p */
+1, 	 	/* q */
+1, 	 	/* r */
+1, 	 	/* s */
+1, 	 	/* t */
+1, 	 	/* u */
+1, 	 	/* v */
+1, 	 	/* w */
+1, 	 	/* x */
+1, 	 	/* y */
+1, 	 	/* z */
+9, 	 	/* OPEN_CURLY */
+7, 	 	/* VERTICAL_BAR */
+10,  	/* CLOSE_CURLY */
+7,  	/* TILDE */
+7 		/* DELETE */
 ];	
 
 /**
@@ -650,134 +650,134 @@ const jump_table = [
  * entries marked as `8` are in both number and identifier sets
  */
 const number_and_identifier_table = [
-0, 		/* A */
-0, 		/* a */
-0, 		/* ACKNOWLEDGE */
-0, 		/* AMPERSAND */
-0, 		/* ASTERISK */
-0, 		/* AT */
-0,		/* B */
-0,		/* b */
-0,		/* BACKSLASH */
-0,		/* BACKSPACE */
+0, 		/* NULL */
+0, 		/* START_OF_HEADER */
+0, 		/* START_OF_TEXT */
+0, 		/* END_OF_TXT */
+0, 		/* END_OF_TRANSMISSION */
+0, 		/* ENQUIRY */
+0,		/* ACKNOWLEDGE */
 0,		/* BELL */
-0,		/* C */
-0,		/* c */
-0,		/* CANCEL */
-0,		/* CARET */
+0,		/* BACKSPACE */
+0,		/* HORIZONTAL_TAB */
+0,		/* LINEFEED */
+0,		/* VERTICAL_TAB */
+0,		/* FORM_FEED */
 0,		/* CARRIAGE_RETURN */
-0,		/* CLOSE_CURLY */
-0,		/* CLOSE_PARENTH */
-0,		/* CLOSE_SQUARE */
-0,		/* COLON */
-0,		/* COMMA */
-0,		/* d */
-0,		/* D */
+0,		/* SHIFT_OUT */
+0,		/* SHIFT_IN */
 0,		/* DATA_LINK_ESCAPE */
-0,		/* DELETE */
 0,		/* DEVICE_CTRL_1 */
 0,		/* DEVICE_CTRL_2 */
 0,		/* DEVICE_CTRL_3 */
 0,		/* DEVICE_CTRL_4 */
-0,		/* DOLLAR */
-0,		/* DOUBLE_QUOTE */
-0,		/* e */
-0,		/* E */
-0,		/* EIGHT */
+0,		/* NEGATIVE_ACKNOWLEDGE */
+0,		/* SYNCH_IDLE */
+0,		/* END_OF_TRANSMISSION_BLOCK */
+0,		/* CANCEL */
 0,		/* END_OF_MEDIUM */
-0,		/* END_OF_TRANSMISSION */
-8,		/* END_OF_TRANSMISSION_BLOCK */
-0,		/* END_OF_TXT */
-0,		/* ENQUIRY */
-0,		/* EQUAL */
+0,		/* SUBSTITUTE */
 0,		/* ESCAPE */
-0,		/* EXCLAMATION */
-0,		/* f */
-0,		/* F */
 0,		/* FILE_SEPERATOR */
-2,		/* FIVE */
-4,		/* FORM_FEED */
-0,		/* FORWARD_SLASH */
-8,		/* FOUR */
-8,		/* g */
-8,		/* G */
-8,		/* GRAVE */
-8,		/* GREATER_THAN */
-8,		/* GROUP_SEPERATOR */
-8,		/* h */
-8,		/* H */
-8,		/* HASH */
-8,		/* HORIZONTAL_TAB */
-0,		/* HYPHEN */
-0,		/* i */
-0,		/* I */
-0,		/* j */
-0,		/* J */
-0,		/* k */
-0,		/* K */
-2,		/* l */
-8,		/* L */
-2,		/* LESS_THAN */
-2,		/* LINE_FEED */
-8,		/* m */
-2,		/* M */
-2,		/* n */
-2,		/* N */
-2,		/* NEGATIVE_ACKNOWLEDGE */
-2,		/* NINE */
-2,		/* NULL */
-2,		/* o */
-2,		/* O */
-2,		/* ONE */
-8,		/* OPEN_CURLY */
-2,		/* OPEN_PARENTH */
-2,		/* OPEN_SQUARE */
-2,		/* p */
-2,		/* P */
-2,		/* PERCENT */
-2,		/* PERIOD */
-2,		/* PLUS */
-2,		/* q */
-8,		/* Q */
-2,		/* QMARK */
-2,		/* QUOTE */
-0,		/* r */
-0,		/* R */
+0,		/* GROUP_SEPERATOR */
 0,		/* RECORD_SEPERATOR */
-0,		/* s */
-2,		/* S */
+0,		/* UNIT_SEPERATOR */
+0,		/* SPACE */
+0,		/* EXCLAMATION */
+0,		/* DOUBLE_QUOTE */
+0,		/* HASH */
+8,		/* DOLLAR */
+0,		/* PERCENT */
+0,		/* AMPERSAND */
+2,		/* QUOTE */
+0,		/* OPEN_PARENTH */
+0,		 /* CLOSE_PARENTH */
+0,		/* ASTERISK */
+0,		/* PLUS */
+0,		/* COMMA */
+2,		/* HYPHEN */
+4,		/* PERIOD */
+0,		/* FORWARD_SLASH */
+8,		/* ZERO */
+8,		/* ONE */
+8,		/* TWO */
+8,		/* THREE */
+8,		/* FOUR */
+8,		/* FIVE */
+8,		/* SIX */
+8,		/* SEVEN */
+8,		/* EIGHT */
+8,		/* NINE */
+0,		/* COLON */
 0,		/* SEMICOLON */
-2,		/* SEVEN */
-8,		/* SHIFT_IN */
-2,		/* SHIFT_OUT */
-2,		/* SIX */
-2,		/* SPACE */
-2,		/* START_OF_HEADER */
-2,		/* START_OF_TEXT */
-2,		/* SUBSTITUTE */
-2,		/* SYNCH_IDLE */
-2,		/* t */
+0,		/* LESS_THAN */
+0,		/* EQUAL */
+0,		/* GREATER_THAN */
+0,		/* QMARK */
+0,		/* AT */
+2,		/* A*/
+8,		/* B */
+2,		/* C */
+2,		/* D */
+8,		/* E */
+2,		/* F */
+2,		/* G */
+2,		/* H */
+2,		/* I */
+2,		/* J */
+2,		/* K */
+2,		/* L */
+2,		/* M */
+2,		/* N */
+8,		/* O */
+2,		/* P */
+2,		/* Q */
+2,		/* R */
+2,		/* S */
 2,		/* T */
-2,		/* THREE */
-2,		/* TILDE */
-2,		/* TWO */
-8,		/* u */
 2,		/* U */
-2,		/* UNDER_SCORE */
-2,		/* UNIT_SEPERATOR */
-2,		/* v */
 2,		/* V */
-2,		/* VERTICAL_BAR */
-2,		/* VERTICAL_TAB */
+2,		/* W */
+8,		/* X */
+2,		/* Y */
+2,		/* Z */
+0,		/* OPEN_SQUARE */
+0,		/* TILDE */
+0,		/* CLOSE_SQUARE */
+0,		/* CARET */
+2,		/* UNDER_SCORE */
+0,		/* GRAVE */
+2,		/* a */
+8,		/* b */
+2,		/* c */
+2,		/* d */
+2,		/* e */
+2,		/* f */
+2,		/* g */
+2,		/* h */
+2,		/* i */
+2,		/* j */
+2,		/* k */
+2,		/* l */
+2,		/* m */
+2,		/* n */
+8,		/* o */
+2,		/* p */
+2,		/* q */
+2,		/* r */
+2,		/* s */
+2,		/* t */
+2,		/* u */
+2,		/* v */
 2,		/* w */
-8,		/* W */
-2,		/* x */
-2,		/* X */
-0,		/* y */
-0,		/* Y */
-0,		/* z */
-0,		/* Z */
-0		/* ZERO */
+8,		/* x */
+2,		/* y */
+2,		/* z */
+0,		/* OPEN_CURLY */
+0,		/* VERTICAL_BAR */
+0,		/* CLOSE_CURLY */
+0,		/* TILDE */
+0		/* DELETE */
 ];
 
 const number = 1,
@@ -832,9 +832,7 @@ const number = 1,
         31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
     ];
 
-function getNumbrOfTrailingZeroBitsFromPowerOf2(value) {
-    return debruijnLUT[(value * 0x077CB531) >>> 27];
-}
+const  getNumbrOfTrailingZeroBitsFromPowerOf2 = (value) => debruijnLUT[(value * 0x077CB531) >>> 27];
 
 class Lexer {
 
@@ -940,7 +938,7 @@ class Lexer {
     /**
     Creates and error message with a diagrame illustrating the location of the error. 
     */
-    errorMessage(message = ""){
+    errorMessage(message = "") {
         const arrow = String.fromCharCode(0x2b89),
             trs = String.fromCharCode(0x2500),
             line = String.fromCharCode(0x2500),
@@ -971,7 +969,7 @@ ${is_iws}`;
      */
     throw (message, DEFER = false) {
         const error = new Error(this.errorMessage(message));
-        if(DEFER)
+        if (DEFER)
             return error;
         throw error;
     }
@@ -1046,101 +1044,132 @@ ${is_iws}`;
             return marker;
         }
 
-        for (;;) {
+        const USE_CUSTOM_SYMBOLS = !!this.symbol_map;
+        let NORMAL_PARSE = true;
 
-            base = off;
+        if (USE_CUSTOM_SYMBOLS) {
 
-            length = 1;
+            let code = str.charCodeAt(off);
+            let off2 = off;
+            let map = this.symbol_map,
+                m$$1;
 
-            const code = str.charCodeAt(off);
+            while (code == 32 && IWS)
+                (code = str.charCodeAt(++off2), off++);
 
-            if (code < 128) {
+            while ((m$$1 = map.get(code))) {
+                map = m$$1;
+                off2 += 1;
+                code = str.charCodeAt(off2);
+            }
 
-                switch (jump_table[code]) {
-                    case 0: //NUMBER
-                        while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)])) ;
+            if (map.IS_SYM) {
+                NORMAL_PARSE = false;
+                base = off;
+                length = off2 - off;
+                char += length;
+            }
+        }
 
-                        if (str[off] == "e" || str[off] == "E") {
-                            off++;
-                            if (str[off] == "-") off++;
-                            marker.off = off;
-                            marker.tl = 0;
-                            marker.next();
-                            off = marker.off + marker.tl;
-                            //Add e to the number string
-                        }
+        if (NORMAL_PARSE) {
 
-                        type = number;
-                        length = off - base;
 
-                        break;
-                    case 1: //IDENTIFIER
-                        while (++off < l$$1 && ((10 & number_and_identifier_table[str.charCodeAt(off)]))) ;
-                        type = identifier;
-                        length = off - base;
-                        break;
-                    case 2: //QUOTED STRING
-                        if (this.PARSE_STRING) {
+            for (;;) {
+
+                base = off;
+
+                length = 1;
+
+                const code = str.charCodeAt(off);
+
+                if (code < 128) {
+
+                    switch (jump_table[code]) {
+                        case 0: //NUMBER
+                            while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)]));
+
+                            if ((str[off] == "e" || str[off] == "E") && (12 & number_and_identifier_table[str.charCodeAt(off + 1)])) {
+                                off++;
+                                if (str[off] == "-") off++;
+                                marker.off = off;
+                                marker.tl = 0;
+                                marker.next();
+                                off = marker.off + marker.tl;
+                                //Add e to the number string
+                            }
+
+                            type = number;
+                            length = off - base;
+
+                            break;
+                        case 1: //IDENTIFIER
+                            while (++off < l$$1 && ((10 & number_and_identifier_table[str.charCodeAt(off)])));
+                            type = identifier;
+                            length = off - base;
+                            break;
+                        case 2: //QUOTED STRING
+                            if (this.PARSE_STRING) {
+                                type = symbol;
+                            } else {
+                                while (++off < l$$1 && str.charCodeAt(off) !== code);
+                                type = string;
+                                length = off - base + 1;
+                            }
+                            break;
+                        case 3: //SPACE SET
+                            while (++off < l$$1 && str.charCodeAt(off) === SPACE);
+                            type = white_space;
+                            length = off - base;
+                            break;
+                        case 4: //TAB SET
+                            while (++off < l$$1 && str[off] === HORIZONTAL_TAB);
+                            type = white_space;
+                            length = off - base;
+                            break;
+                        case 5: //CARIAGE RETURN
+                            length = 2;
+                            //Intentional
+                        case 6: //LINEFEED
+                            type = new_line;
+                            char = 0;
+                            line++;
+                            off += length;
+                            break;
+                        case 7: //SYMBOL
                             type = symbol;
-                        } else {
-                            while (++off < l$$1 && str.charCodeAt(off) !== code) ;
-                            type = string;
-                            length = off - base + 1;
-                        }
-                        break;
-                    case 3: //SPACE SET
-                        while (++off < l$$1 && str.charCodeAt(off) === SPACE) ;
-                        type = white_space;
-                        length = off - base;
-                        break;
-                    case 4: //TAB SET
-                        while (++off < l$$1 && str[off] === HORIZONTAL_TAB) ;
-                        type = white_space;
-                        length = off - base;
-                        break;
-                    case 5: //CARIAGE RETURN
-                        length = 2;
-                        //Intentional
-                    case 6: //LINEFEED
-                        type = new_line;
-                        char = 0;
-                        line++;
-                        off += length;
-                        break;
-                    case 7: //SYMBOL
+                            break;
+                        case 8: //OPERATOR
+                            type = operator;
+                            break;
+                        case 9: //OPEN BRACKET
+                            type = open_bracket;
+                            break;
+                        case 10: //CLOSE BRACKET
+                            type = close_bracket;
+                            break;
+                        case 11: //Data Link Escape
+                            type = data_link;
+                            length = 4; //Stores two UTF16 values and a data link sentinel
+                            break;
+                    }
+                }
+
+                if (IWS && (type & white_space_new_line)) {
+                    if (off < l$$1) {
+                        char += length;
                         type = symbol;
-                        break;
-                    case 8: //OPERATOR
-                        type = operator;
-                        break;
-                    case 9: //OPEN BRACKET
-                        type = open_bracket;
-                        break;
-                    case 10: //CLOSE BRACKET
-                        type = close_bracket;
-                        break;
-                    case 11: //Data Link Escape
-                        type = data_link;
-                        length = 4; //Stores two UTF16 values and a data link sentinel
-                        break;
+                        continue;
+                    } else {
+                        //Trim white space from end of string
+                        base = l$$1 - length;
+                        marker.sl -= length;
+                        length = 0;
+                        char -= base - off;
+                    }
                 }
-            }
 
-            if (IWS && (type & white_space_new_line)) {
-                if (off < l$$1) {
-                    char += length;
-                    type = symbol;
-                    continue;
-                } else {
-                    //Trim white space from end of string
-                    base = l$$1 - length;
-                    marker.sl -= length;
-                    length = 0;
-                    char -= base - off;
-                }
+                break;
             }
-
-            break;
         }
 
         marker.type = type;
@@ -1287,32 +1316,79 @@ ${is_iws}`;
 
     /**
      * Returns new Whind Lexer that has leading and trailing whitespace characters removed from input. 
+     * leave_leading_amount - Maximum amount of leading space caracters to leave behind. Default is zero
+     * leave_trailing_amount - Maximum amount of trailing space caracters to leave behind. Default is zero
      */
-    trim() {
+    trim(leave_leading_amount = 0, leave_trailing_amount = leave_leading_amount) {
         const lex = this.copy();
+
+        let space_count = 0,
+            off = lex.off;
 
         for (; lex.off < lex.sl; lex.off++) {
             const c$$1 = jump_table[lex.string.charCodeAt(lex.off)];
 
-            if (c$$1 > 2 && c$$1 < 7)
+            if (c$$1 > 2 && c$$1 < 7) {
+
+                if (space_count >= leave_leading_amount) {
+                    off++;
+                } else {
+                    space_count++;
+                }
                 continue;
+            }
 
             break;
         }
+
+        lex.off = off;
+        space_count = 0;
+        off = lex.sl;
 
         for (; lex.sl > lex.off; lex.sl--) {
             const c$$1 = jump_table[lex.string.charCodeAt(lex.sl - 1)];
 
-            if (c$$1 > 2 && c$$1 < 7)
+            if (c$$1 > 2 && c$$1 < 7) {
+                if (space_count >= leave_trailing_amount) {
+                    off--;
+                } else {
+                    space_count++;
+                }
                 continue;
+            }
 
             break;
         }
 
+        lex.sl = off;
+
+        if (leave_leading_amount > 0)
+            lex.IWS = false;
+
         lex.token_length = 0;
+
         lex.next();
 
         return lex;
+    }
+
+    /** Adds symbol to symbol_map. This allows custom symbols to be defined and tokenized by parser. **/
+    addSymbol(sym) {
+        if (!this.symbol_map)
+            this.symbol_map = new Map;
+
+
+        let map = this.symbol_map;
+
+        for (let i$$1 = 0; i$$1 < sym.length; i$$1++) {
+            let code = sym.charCodeAt(i$$1);
+            let m$$1 = map.get(code);
+            if (!m$$1) {
+                m$$1 = map.set(code, new Map).get(code);
+            }
+            map = m$$1;
+        }
+        map.IS_SYM = true;
     }
 
     /*** Getters and Setters ***/
@@ -1401,7 +1477,6 @@ ${is_iws}`;
 
     set type(value) {
         //assuming power of 2 value.
-
         this.masked_values = (this.masked_values & ~TYPE_MASK) | ((getNumbrOfTrailingZeroBitsFromPowerOf2(value)) & TYPE_MASK);
     }
 
@@ -1460,6 +1535,8 @@ ${is_iws}`;
         return Types;
     }
 }
+
+Lexer.prototype.addCharacter = Lexer.prototype.addSymbol;
 
 function whind$1(string, INCLUDE_WHITE_SPACE_TOKENS = false) { return new Lexer(string, INCLUDE_WHITE_SPACE_TOKENS) }
 
@@ -2067,39 +2144,14 @@ const STOCK_LOCATION = {
     query: "",
     search: ""
 };
-
-/** Implement Basic Fetch Mechanism for NodeJS **/
-if (typeof(fetch) == "undefined" && typeof(global) !== "undefined") {
-    (async () => {
-        const fs = (await Promise.resolve(require("fs"))).default.promises;
-        const path = (await Promise.resolve(require("path"))).default;
-        global.fetch = (url, data) =>
-            new Promise(async (res, rej) => {
-                let p = await path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-                try {
-                    let data = await fs.readFile(p, "utf8");
-                    return res({
-                        status: 200,
-                        text: () => {
-                            return {
-                                then: (f) => f(data)
-                            }
-                        }
-                    })
-                } catch (err) {
-                    return rej(err);
-                }
-            });
-    })();
-}
-
 function fetchLocalText(URL, m = "same-origin") {
     return new Promise((res, rej) => {
         fetch(URL, {
             mode: m, // CORs not allowed
             credentials: m,
-            method: "Get"
+            method: "GET"
         }).then(r => {
+
             if (r.status < 200 || r.status > 299)
                 r.text().then(rej);
             else
@@ -2113,7 +2165,7 @@ function fetchLocalJSON(URL, m = "same-origin") {
         fetch(URL, {
             mode: m, // CORs not allowed
             credentials: m,
-            method: "Get"
+            method: "GET"
         }).then(r => {
             if (r.status < 200 || r.status > 299)
                 r.json().then(rej);
@@ -2181,10 +2233,12 @@ function submitJSON(URL, json_data, m = "same-origin") {
  */
 class URL {
 
-    static resolveRelative(URL_or_url_original, URL_or_url_new) {
+    static resolveRelative(URL_or_url_new, URL_or_url_original = document.location.toString(), ) {
 
         let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
         let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
+        
+        if (!(URL_old + "") || !(URL_new + "")) return null;
         if (URL_new.path[0] != "/") {
 
             let a = URL_old.path.split("/");
@@ -2205,7 +2259,6 @@ class URL {
             URL_new.path = a.join("/");
         }
 
-
         return URL_new;
     }
 
@@ -2217,7 +2270,7 @@ class URL {
 
         let location = (typeof(document) !== "undefined") ? document.location : STOCK_LOCATION;
 
-        if (url instanceof Location) {
+        if (typeof(Location) !== "undefined" && url instanceof Location) {
             location = url;
             url = "";
             IS_LOCATION = true;
@@ -2286,6 +2339,11 @@ class URL {
                 this.hash = url.hash;
             } else {
                 let part = url.match(uri_reg_ex);
+
+                //If the complete string is not matched than we are dealing with something other 
+                //than a pure URL. Thus, no object is returned. 
+                if (part[0] !== url) return null;
+
                 this.protocol = part[1] || ((USE_LOCATION) ? location.protocol : "");
                 this.user = part[2] || "";
                 this.pwd = part[3] || "";
@@ -2297,7 +2355,7 @@ class URL {
 
             }
         } else if (IS_LOCATION) {
-            this.protocol = location.protocol.replace(/\:/g,"");
+            this.protocol = location.protocol.replace(/\:/g, "");
             this.host = location.hostname;
             this.port = location.port;
             this.path = location.pathname;
@@ -2407,7 +2465,7 @@ class URL {
             str.push(((this.query[0] == "?" ? "" : "?") + this.query));
 
         if (this.hash)
-            str.push("#"+this.hash);
+            str.push("#" + this.hash);
 
 
         return str.join("");
@@ -2550,8 +2608,8 @@ class URL {
         return submitForm(this.toString(), form_data);
     }
 
-    submitJSON(json_data) {
-        return submitJSON(this.toString(), json_data);
+    submitJSON(json_data, mode) {
+        return submitJSON(this.toString(), json_data, mode);
     }
     /**
      * Goes to the current URL.
@@ -2570,6 +2628,11 @@ class URL {
 
     get href() {
         return this.toString();
+    }
+
+    get ext() {
+        const m = this.path.match(/\.([^\.]*)$/);
+        return m ? m[1] : "";
     }
 }
 
@@ -2672,6 +2735,81 @@ URL.R = {
         return URL.G.cacheResource(resource);
     }
 };
+
+
+/** Implement Basic Fetch Mechanism for NodeJS **/
+if (typeof(fetch) == "undefined" && typeof(global) !== "undefined") {
+    (async () => {
+        console.log("Moonshot");
+        
+        global.fetch = (url, data) =>
+            new Promise(async (res, rej) => {
+                let p = await path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+                try {
+                    let data = await fs.readFile(p, "utf8");
+                    return res({
+                        status: 200,
+                        text: () => {
+                            return {
+                                then: (f) => f(data)
+                            }
+                        }
+                    })
+                } catch (err) {
+                    return rej(err);
+                }
+            });
+    })();
+}
+
+
+let SIMDATA = null;
+
+/* Replaces the fetch actions with functions that simulate network fetches. Resources are added by the user to a Map object. */
+URL.simulate = function(){
+    SIMDATA = new Map;
+    URL.prototype.fetchText = async d => ((d = this.toString()), SIMDATA.get(d)) ? SIMDATA.get(d) : "" ;
+    URL.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {} ;
+};
+
+//Allows simulated resources to be added as a key value pair, were the key is a URI string and the value is string data.
+URL.addResource = (n,v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
+
+URL.polyfill = function() {    if (typeof(global) !== "undefined") {
+    console.log("AAAAAAAAAAAAAAAAAAAAAA");
+        const fs = (Promise.resolve(require("fs"))).promises;
+        const path = (Promise.resolve(require("path")));
+
+
+        global.Location =  (class extends URL{});
+        
+        global.document = global.document || {};
+
+        global.document.location = new URL(process.env.PWD);
+        /**
+         * Global `fetch` polyfill - basic support
+         */
+        global.fetch = (url, data) =>
+            new Promise((res, rej) => {
+                let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+                fs.readFile(p, "utf8", (err, data) => {
+                    if (err) {
+                        rej(err);
+                    } else {
+                        res({
+                            status: 200,
+                            text: () => {
+                                return {
+                                    then: (f) => f(data)
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+    }
+};
+
 Object.freeze(URL.R);
 Object.freeze(URL.RC);
 Object.seal(URL);
@@ -5326,7 +5464,12 @@ const
                 if (type == CSS_STYLE) {
                     let name = prop_name.replace(/[A-Z]/g, (match) => "-" + match.toLowerCase());
                     let cs = window.getComputedStyle(obj);
+
+                    //Try to get computed value. If it does not exist, then get value from the style attribtute.
                     let value = cs.getPropertyValue(name);
+                    
+                    if(!value)
+                        value = obj.style[prop_name];
 
                     if (this.type == CSS_Percentage$1) {
                         if (obj.parentElement) {
@@ -5336,7 +5479,6 @@ const
                             value = (ratio * 100);
                         }
                     }
-
 
                     this.current_val = new this.type(value);
 
@@ -5455,6 +5597,9 @@ const
                 this.FINISHED = false;
                 this.CSS_ANIMATING = false;
                 this.events = {};
+                this.SHUTTLE = false;
+                this.REPEAT = 0;
+                this.SCALE = 1;
 
                 switch (this.type) {
                     case CSS_STYLE:
@@ -5528,23 +5673,59 @@ const
                         prop.run(this.obj, n, i, this.type);
                 }
 
-                if (i >= this.duration)
+                if (i >= this.duration || i <= 0)
                     return false;
 
                 return true;
             }
 
             scheduledUpdate(a, t) {
-                if (this.run(this.time += t))
+
+                this.time += t * this.SCALE;
+                if (this.run(this.time)){
                     spark.queueUpdate(this);
-                else
+                }
+                else if(this.REPEAT){
+                    let scale = this.SCALE;
+                    
+                    this.REPEAT--;
+
+                    if(this.SHUTTLE)
+                        scale = -scale;
+                    
+                    let from = (scale > 0) ? 0 : this.duration;
+                         
+                    this.play(scale, from);
+                }else
                     this.issueEvent("stopped");
+
             }
 
-            play(from = 0) {
+            //TODO: use repeat to continually play back numation 
+            repeat(count = 1){
+                this.REPEAT = Math.max(0,parseFloat(count));
+                return this;
+            } 
+             //TODO: allow scale to control playback speed and direction
+            play(scale = 1, from = 0) {
+                this.SCALE = scale;
                 this.time = from;
                 spark.queueUpdate(this);
                 this.issueEvent("started");
+                return this;
+            }
+
+            set(i=0){
+                if(i >= 0)
+                    this.run(i*this.duration);
+                else
+                    this.run(this.duration - i*this.duration);
+            }
+
+
+            shuttle(SHUTTLE = true){
+                this.SHUTTLE = !!SHUTTLE;
+                return this;
             }
 
             addEventListener(event, listener) {
@@ -5632,6 +5813,9 @@ const
                 this.seq = [];
                 this.time = 0;
                 this.duration = 0;
+                this.SHUTTLE = false;
+                this.REPEAT = 0;
+                this.SCALE = 1;
             }
 
             destroy() {
@@ -5657,15 +5841,51 @@ const
             }
 
             scheduledUpdate(a, t) {
-                this.time += t;
+                this.time += t * this.SCALE;
                 if (this.run(this.time))
                     spark.queueUpdate(this);
+                else if(repeat){
+                    let scale = this.scale;
+                    
+                    repeat--;
+
+                    if(this.SHUTTLE)
+                        scale = -scale;
+                    
+                    let from = (scale > 0) ? 0 : this.duration;
+                         
+                    this.play(scale, from);
+                }
             }
 
-            play(from = 0) {
-                this.time = 0;
-                spark.queueUpdate(this);
+            shuttle(SHUTTLE = true){
+                this.SHUTTLE = !!SHUTTLE;
+                return this;
             }
+
+            stop(){
+                return this;
+            }
+
+            set(i=0){
+                if(i >= 0)
+                    this.run(i*this.duration);
+                else
+                    this.run(this.duration - i*this.duration);
+            }
+
+            //TODO: allow scale to control playback speed and direction
+            play(scale = 1, from = 0) {
+                this.SCALE = 0;
+                this.time = from;
+                spark.queueUpdate(this);
+                return this;
+            }
+            //TODO: use repeat to continually play back numation 
+            repeat(count = 0){
+                this.REPEAT = Math.max(0,parseInt(count));
+                return this;
+            }    
         }
 
         const GlowFunction = function() {

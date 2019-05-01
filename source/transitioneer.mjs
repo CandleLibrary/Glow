@@ -8,53 +8,33 @@ const Transitioneer = (function() {
     let obj_map = new Map();
     let ActiveTransition = null;
 
-    function $in(anim_data_or_duration = 0, delay = 0) {
+    function $in(...data) {
 
-        let seq;
+        let
+            seq = null,
+            length = data.length,
+            delay = 0;
 
-        if (typeof(anim_data_or_duration) == "object") {
-            if (anim_data_or_duration.match && this.TT[anim_data_or_duration.match]) {
-                let duration = anim_data_or_duration.duration;
-                let easing = anim_data_or_duration.easing;
-                seq = this.TT[anim_data_or_duration.match](anim_data_or_duration.obj, duration, easing);
-            } else
-                seq = Animation.createSequence(anim_data_or_duration);
+        if (typeof(data[length - 1]) == "number")
+            delay = data[length - 1], length--;
 
-            //Parse the object and convert into animation props. 
-            if (seq) {
-                this.in_seq.push(seq);
-                this.in_duration = Math.max(this.in_duration, seq.duration);
-                if (this.OVERRIDE) {
+        for (let i = 0; i < length; i++) {
+            let anim_data = data[i];
 
-                    if (obj_map.get(seq.obj)) {
-                        let other_seq = obj_map.get(seq.obj);
-                        other_seq.removeProps(seq);
-                    }
+            if (typeof(anim_data) == "object") {
 
-                    obj_map.set(seq.obj, seq);
-                }
-            }
+                if (anim_data.match && this.TT[anim_data.match]) {
+                    let
+                        duration = anim_data.duration,
+                        easing = anim_data.easing;
+                    seq = this.TT[anim_data.match](anim_data.obj, duration, easing);
+                } else
+                    seq = Animation.createSequence(anim_data);
 
-        } else
-            this.in_duration = Math.max(this.in_duration, parseInt(delay) + parseInt(anim_data_or_duration));
-
-        return this.in;
-    }
-
-
-    function $out(anim_data_or_duration = 0, delay = 0, in_delay = 0) {
-        //Every time an animating component is added to the Animation stack delay and duration need to be calculated.
-        //The highest in_delay value will determine how much time is afforded before the animations for the in portion are started.
-
-        if (typeof(anim_data_or_duration) == "object") {
-
-            if (anim_data_or_duration.match) {
-                this.TT[anim_data_or_duration.match] = TransformTo(anim_data_or_duration.obj);
-            } else {
-                let seq = Animation.createSequence(anim_data_or_duration);
+                //Parse the object and convert into animation props. 
                 if (seq) {
-                    this.out_seq.push(seq);
-                    this.out_duration = Math.max(this.out_duration, seq.duration);
+                    this.in_seq.push(seq);
+                    this.in_duration = Math.max(this.in_duration, seq.duration);
                     if (this.OVERRIDE) {
 
                         if (obj_map.get(seq.obj)) {
@@ -65,11 +45,59 @@ const Transitioneer = (function() {
                         obj_map.set(seq.obj, seq);
                     }
                 }
-                this.in_delay = Math.max(this.in_delay, parseInt(delay));
             }
-        } else {
-            this.out_duration = Math.max(this.out_duration, parseInt(delay) + parseInt(anim_data_or_duration));
-            this.in_delay = Math.max(this.in_delay, parseInt(in_delay));
+        }
+
+        this.in_duration = Math.max(this.in_duration, parseInt(delay));
+
+        return this.in;
+    }
+
+
+    function $out(...data) {
+        //Every time an animating component is added to the Animation stack delay and duration need to be calculated.
+        //The highest in_delay value will determine how much time is afforded before the animations for the in portion are started.
+        let
+            seq = null,
+            length = data.length,
+            delay = 0,
+            in_delay = 0;
+
+        if (typeof(data[length - 1]) == "number") {
+            if (typeof(data[length - 2]) == "number") {
+                in_delay = data[length - 2];
+                delay = data[length - 1];
+                length -= 2;
+            } else
+                delay = data[length - 1], length--;
+        }
+
+        for (let i = 0; i < length; i++) {
+            let anim_data = data[i];
+
+            if (typeof(anim_data) == "object") {
+
+                if (anim_data.match) {
+                    this.TT[anim_data.match] = TransformTo(anim_data.obj);
+                } else {
+                    let seq = Animation.createSequence(anim_data);
+                    if (seq) {
+                        this.out_seq.push(seq);
+                        this.out_duration = Math.max(this.out_duration, seq.duration);
+                        if (this.OVERRIDE) {
+
+                            if (obj_map.get(seq.obj)) {
+                                let other_seq = obj_map.get(seq.obj);
+                                other_seq.removeProps(seq);
+                            }
+
+                            obj_map.set(seq.obj, seq);
+                        }
+                    }
+
+                    this.in_delay = Math.max(this.in_delay, parseInt(delay));
+                }
+            }
         }
     }
 
@@ -167,7 +195,7 @@ const Transitioneer = (function() {
         }
 
         step(t) {
-            
+
             for (let i = 0; i < this.out_seq.length; i++) {
                 let seq = this.out_seq[i];
                 if (!seq.run(t) && !seq.FINISHED) {

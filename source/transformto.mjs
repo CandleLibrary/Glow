@@ -1,5 +1,5 @@
 import { Animation } from "./animation";
-import css from "@candlefw/css";
+import * as css from "@candlefw/css";
 
 const CSS_Transform2D = css.types.transform2D;
 

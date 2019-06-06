@@ -1,5 +1,5 @@
 import spark from "@candlefw/spark";
-import css from "@candlefw/css";
+import * as css from "@candlefw/css";
 
 const
     CSS_Length = css.types.length,
@@ -56,7 +56,7 @@ const
                     this.type = this.getType(k0_val);
                 }
 
-                this.getValue(obj, prop_name, type);
+                this.getValue(obj, prop_name, type, k0_val);
 
                 let p = this.current_val;
 
@@ -72,7 +72,8 @@ const
                 this.current_val = null;
             }
 
-            getValue(obj, prop_name, type) {
+            getValue(obj, prop_name, type, k0_val) {
+
                 if (type == CSS_STYLE) {
                     let name = prop_name.replace(/[A-Z]/g, (match) => "-" + match.toLowerCase());
                     let cs = window.getComputedStyle(obj);
@@ -82,6 +83,7 @@ const
                     
                     if(!value)
                         value = obj.style[prop_name];
+                
 
                     if (this.type == CSS_Percentage) {
                         if (obj.parentElement) {
@@ -91,8 +93,7 @@ const
                             value = (ratio * 100);
                         }
                     }
-
-                    this.current_val = new this.type(value);
+                    this.current_val = (new this.type(value));
 
                 } else {
                     this.current_val = new this.type(obj[prop_name]);
@@ -181,7 +182,6 @@ const
             }
 
             setProp(obj, prop_name, value, type) {
-
                 if (type == CSS_STYLE) {
                     obj.style[prop_name] = value;
                 } else
@@ -490,7 +490,7 @@ const
 
             //TODO: allow scale to control playback speed and direction
             play(scale = 1, from = 0) {
-                this.SCALE = 0;
+                this.SCALE = scale;
                 this.time = from;
                 spark.queueUpdate(this);
                 return this;
@@ -502,19 +502,19 @@ const
             }    
         }
 
-        const GlowFunction = function() {
+        const GlowFunction = function(...args) {
 
-            if (arguments.length > 1) {
+            if (args.length > 1) {
 
                 let group = new AnimGroup();
 
-                for (let i = 0; i < arguments.length; i++) {
-                    let data = arguments[i];
+                for (let i = 0; i < args.length; i++) {
+                    let data = args[i];
 
                     let obj = data.obj;
                     let props = {};
 
-                    Object.keys(data).forEach(k => { if (!(({ obj: true, match: true })[k])) props[k] = data[k]; });
+                    Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay:true })[k])) props[k] = data[k]; });
 
                     group.add(new AnimSequence(obj, props));
                 }
@@ -522,12 +522,12 @@ const
                 return group;
 
             } else {
-                let data = arguments[0];
+                let data = args[0];
 
                 let obj = data.obj;
                 let props = {};
 
-                Object.keys(data).forEach(k => { if (!(({ obj: true, match: true })[k])) props[k] = data[k]; });
+                Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay:true })[k])) props[k] = data[k]; });
 
                 let seq = new AnimSequence(obj, props);
 

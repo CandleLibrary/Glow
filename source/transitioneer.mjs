@@ -157,7 +157,7 @@ const Transitioneer = (function() {
         }
 
 
-        start(time = 0, speed = 1, reverse = false) {
+        async start(time = 0, speed = 1, reverse = false) {
 
             for (let i = 0; i < this.in_seq.length; i++) {
                 // let seq = this.in_seq[i];
@@ -171,11 +171,17 @@ const Transitioneer = (function() {
             if (this.reverse)
                 this.speed = -this.speed;
 
+            const t = Math.random();
+
             return new Promise((res, rej) => {
-                if (this.duration > 0)
+                if (this.duration > 0){
+                    console.log(t)
                     this.scheduledUpdate(0, 0);
-                if (this.duration < 1)
+                }
+                if (this.duration < 1){
+                    console.log(t)
                     return res();
+                }
                 this.res = res;
             });
         }
@@ -224,7 +230,7 @@ const Transitioneer = (function() {
             this.step(this.time);
 
 
-            if (this.res && this.time >= this.in_delay) {
+            if (this.res && this.time >= this.in_delay + this.out_duration) {
                 this.res();
                 this.res = null;
             }
@@ -237,8 +243,10 @@ const Transitioneer = (function() {
                     return spark.queueUpdate(this);
             }
 
-            if (this.res)
+            if (this.res){
+                debugger
                 this.res();
+            }
 
             this.destroy();
         }

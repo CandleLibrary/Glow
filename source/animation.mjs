@@ -80,10 +80,10 @@ const
 
                     //Try to get computed value. If it does not exist, then get value from the style attribtute.
                     let value = cs.getPropertyValue(name);
-                    
-                    if(!value)
+
+                    if (!value)
                         value = obj.style[prop_name];
-                
+
 
                     if (this.type == CSS_Percentage) {
                         if (obj.parentElement) {
@@ -294,31 +294,30 @@ const
             scheduledUpdate(a, t) {
 
                 this.time += t * this.SCALE;
-                if (this.run(this.time)){
+                if (this.run(this.time)) {
                     spark.queueUpdate(this);
-                }
-                else if(this.REPEAT){
+                } else if (this.REPEAT) {
                     let scale = this.SCALE;
-                    
+
                     this.REPEAT--;
 
-                    if(this.SHUTTLE)
+                    if (this.SHUTTLE)
                         scale = -scale
-                    
+
                     let from = (scale > 0) ? 0 : this.duration;
-                         
+
                     this.play(scale, from)
-                }else
+                } else
                     this.issueEvent("stopped");
 
             }
 
             //TODO: use repeat to continually play back numation 
-            repeat(count = 1){
-                this.REPEAT = Math.max(0,parseFloat(count));
+            repeat(count = 1) {
+                this.REPEAT = Math.max(0, parseFloat(count));
                 return this;
-            } 
-             //TODO: allow scale to control playback speed and direction
+            }
+            //TODO: allow scale to control playback speed and direction
             play(scale = 1, from = 0) {
                 this.SCALE = scale;
                 this.time = from;
@@ -327,15 +326,15 @@ const
                 return this;
             }
 
-            set(i=0){
-                if(i >= 0)
-                    this.run(i*this.duration);
+            set(i = 0) {
+                if (i >= 0)
+                    this.run(i * this.duration);
                 else
-                    this.run(this.duration - i*this.duration);
+                    this.run(this.duration - i * this.duration);
             }
 
 
-            shuttle(SHUTTLE = true){
+            shuttle(SHUTTLE = true) {
                 this.SHUTTLE = !!SHUTTLE;
                 return this;
             }
@@ -430,6 +429,13 @@ const
                 this.SHUTTLE = false;
                 this.REPEAT = 0;
                 this.SCALE = 1;
+                this.ANIM_COMPLETE_FUNCTION = null;
+            }
+
+            observeStop(fun) {
+                if (typeof fun == "function")
+                    return (new Promise((res=>this.ANIM_COMPLETE_FUNCTION = res))).then(fun);
+                return this;
             }
 
             destroy() {
@@ -458,34 +464,34 @@ const
                 this.time += t * this.SCALE;
                 if (this.run(this.time))
                     spark.queueUpdate(this);
-                else if(repeat){
+                else if (repeat) {
                     let scale = this.scale;
-                    
+
                     repeat--;
 
-                    if(this.SHUTTLE)
+                    if (this.SHUTTLE)
                         scale = -scale
-                    
+
                     let from = (scale > 0) ? 0 : this.duration;
-                         
+
                     this.play(scale, from)
                 }
             }
 
-            shuttle(SHUTTLE = true){
+            shuttle(SHUTTLE = true) {
                 this.SHUTTLE = !!SHUTTLE;
                 return this;
             }
 
-            stop(){
+            stop() {
                 return this;
             }
 
-            set(i=0){
-                if(i >= 0)
-                    this.run(i*this.duration);
+            set(i = 0) {
+                if (i >= 0)
+                    this.run(i * this.duration);
                 else
-                    this.run(this.duration - i*this.duration);
+                    this.run(this.duration - i * this.duration);
             }
 
             //TODO: allow scale to control playback speed and direction
@@ -496,10 +502,10 @@ const
                 return this;
             }
             //TODO: use repeat to continually play back numation 
-            repeat(count = 0){
-                this.REPEAT = Math.max(0,parseInt(count));
+            repeat(count = 0) {
+                this.REPEAT = Math.max(0, parseInt(count));
                 return this;
-            }    
+            }
         }
 
         const GlowFunction = function(...args) {
@@ -514,7 +520,7 @@ const
                     let obj = data.obj;
                     let props = {};
 
-                    Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay:true })[k])) props[k] = data[k]; });
+                    Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay: true })[k])) props[k] = data[k]; });
 
                     group.add(new AnimSequence(obj, props));
                 }
@@ -527,7 +533,7 @@ const
                 let obj = data.obj;
                 let props = {};
 
-                Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay:true })[k])) props[k] = data[k]; });
+                Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay: true })[k])) props[k] = data[k]; });
 
                 let seq = new AnimSequence(obj, props);
 

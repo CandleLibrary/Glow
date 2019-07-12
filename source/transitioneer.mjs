@@ -9,7 +9,7 @@ const Transitioneer = (function() {
     let ActiveTransition = null;
 
     function $in(...data) {
-
+        
         let
             seq = null,
             length = data.length,
@@ -174,14 +174,13 @@ const Transitioneer = (function() {
             const t = Math.random();
 
             return new Promise((res, rej) => {
-                if (this.duration > 0){
-                    console.log(t)
+                
+                if (this.duration > 0)
                     this.scheduledUpdate(0, 0);
-                }
-                if (this.duration < 1){
-                    console.log(t)
+                
+                if (this.duration < 1)
                     return res();
-                }
+                
                 this.res = res;
             });
         }

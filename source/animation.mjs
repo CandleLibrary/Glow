@@ -39,7 +39,6 @@ const
         class AnimProp {
 
             constructor(keys, obj, prop_name, type) {
-
                 this.duration = 0;
                 this.end = false;
                 this.keys = [];
@@ -171,7 +170,7 @@ const
                         val_out = val_end;
                     }
                 }
-
+                
                 return val_out;
             }
 
@@ -201,6 +200,7 @@ const
         // Stores animation data for a group of properties. Defines delay and repeat.
         class AnimSequence {
             constructor(obj, props) {
+
                 this.duration = 0;
                 this.time = 0;
                 this.obj = null;

@@ -86,5 +86,8 @@ Press h to open a hovercard with more details.
 #Api directory
 documents/api/*
 
-#Sublime Workspace
+#sublime  workspace
 *.sublime-workspace
+
+#HCG backup compiler files.
+*.hcgb*

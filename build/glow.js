@@ -1,153 +1,7 @@
-var glow = (function () {
+var glow = (function (spark) {
     'use strict';
 
-    /**
-     * Used to call the Scheduler after a JavaScript runtime tick.
-     *
-     * Depending on the platform, caller will either map to requestAnimationFrame or it will be a setTimout.
-     */
-     
-    const caller = (typeof(window) == "object" && window.requestAnimationFrame) ? window.requestAnimationFrame : (f) => {
-        setTimeout(f, 1);
-    };
-
-    const perf = (typeof(performance) == "undefined") ? { now: () => Date.now() } : performance;
-
-
-    /**
-     * Handles updating objects. It does this by splitting up update cycles, to respect the browser event model. 
-     *    
-     * If any object is scheduled to be updated, it will be blocked from scheduling more updates until the next ES VM tick.
-     */
-    class Spark {
-        /**
-         * Constructs the object.
-         */
-        constructor() {
-
-            this.update_queue_a = [];
-            this.update_queue_b = [];
-
-            this.update_queue = this.update_queue_a;
-
-            this.queue_switch = 0;
-
-            this.callback = ()=>{};
-
-
-            if(typeof(window) !== "undefined"){
-                window.addEventListener("load",()=>{
-                    this.callback = () => this.update();
-                    caller(this.callback);
-                });
-            }else{
-                this.callback = () => this.update();
-            }
-
-
-            this.frame_time = perf.now();
-
-            this.SCHEDULE_PENDING = false;
-        }
-
-        /**
-         * Given an object that has a _SCHD_ Boolean property, the Scheduler will queue the object and call its .update function 
-         * the following tick. If the object does not have a _SCHD_ property, the Scheduler will persuade the object to have such a property.
-         * 
-         * If there are currently no queued objects when this is called, then the Scheduler will user caller to schedule an update.
-         */
-        queueUpdate(object, timestart = 1, timeend = 0) {
-
-            if (object._SCHD_ || object._SCHD_ > 0) {
-                if (this.SCHEDULE_PENDING)
-                    return;
-                else
-                    return caller(this.callback);
-            }
-
-            object._SCHD_ = ((timestart & 0xFFFF) | ((timeend) << 16));
-
-            this.update_queue.push(object);
-
-            if (this._SCHD_)
-                return;
-
-            this.frame_time = perf.now() | 0;
-
-
-            if(!this.SCHEDULE_PENDING){
-                this.SCHEDULE_PENDING = true;
-                caller(this.callback);
-            }
-        }
-
-        removeFromQueue(object){
-
-            if(object._SCHD_)
-                for(let i = 0, l = this.update_queue.length; i < l; i++)
-                    if(this.update_queue[i] === object){
-                        this.update_queue.splice(i,1);
-                        object._SCHD_ = 0;
-
-                        if(l == 1)
-                            this.SCHEDULE_PENDING = false;
-
-                        return;
-                    }
-        }
-
-        /**
-         * Called by the caller function every tick. Calls .update on any object queued for an update. 
-         */
-        update() {
-
-            this.SCHEDULE_PENDING = false;
-
-            const uq = this.update_queue;
-            const time = perf.now() | 0;
-            const diff = Math.ceil(time - this.frame_time) | 1;
-            const step_ratio = (diff * 0.06); //  step_ratio of 1 = 16.66666666 or 1000 / 60 for 60 FPS
-
-            this.frame_time = time;
-            
-            if (this.queue_switch == 0)
-                (this.update_queue = this.update_queue_b, this.queue_switch = 1);
-            else
-                (this.update_queue = this.update_queue_a, this.queue_switch = 0);
-
-            for (let i = 0, l = uq.length, o = uq[0]; i < l; o = uq[++i]) {
-                let timestart = ((o._SCHD_ & 0xFFFF)) - diff;
-                let timeend = ((o._SCHD_ >> 16) & 0xFFFF);
-
-                o._SCHD_ = 0;
-                
-                if (timestart > 0) {
-                    this.queueUpdate(o, timestart, timeend);
-                    continue;
-                }
-
-                timestart = 0;
-
-                if (timeend > 0) 
-                    this.queueUpdate(o, timestart, timeend - diff);
-
-                /** 
-                    To ensure on code path doesn't block any others, 
-                    scheduledUpdate methods are called within a try catch block. 
-                    Errors by default are printed to console. 
-                **/
-                try {
-                    o.scheduledUpdate(step_ratio, diff);
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-
-            uq.length = 0;
-        }
-    }
-
-    const spark = new Spark();
+    spark = spark && spark.hasOwnProperty('default') ? spark['default'] : spark;
 
     const HORIZONTAL_TAB = 9;
     const SPACE = 32;
@@ -1880,7 +1734,7 @@ var glow = (function () {
         get unit(){return "deg";}
     }
 
-    const uri_reg_ex = /(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:\/\/))?(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:([^\<\>\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\<\>\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\<\>\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
+    const uri_reg_ex = /(?:([^\:\?\[\]\@\/\#\b\s][^\:\?\[\]\@\/\#\b\s]*)(?:\:\/\/))?(?:([^\:\?\[\]\@\/\#\b\s][^\:\?\[\]\@\/\#\b\s]*)(?:\:([^\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
 
     const STOCK_LOCATION = {
         protocol: "",
@@ -1891,7 +1745,6 @@ var glow = (function () {
         query: "",
         search: ""
     };
-
     function fetchLocalText(URL, m = "same-origin") {
         return new Promise((res, rej) => {
             fetch(URL, {
@@ -1985,7 +1838,7 @@ var glow = (function () {
 
             let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
             let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
-
+            
             if (!(URL_old + "") || !(URL_new + "")) return null;
             if (URL_new.path[0] != "/") {
 
@@ -2279,7 +2132,7 @@ var glow = (function () {
                             str += `&${key}=${val}`;
                     }
                 }
-                
+
                 str = str.slice(1);
 
                 this.query = this.query.split("?")[0] + "?" + str;
@@ -2370,19 +2223,14 @@ var glow = (function () {
             URL.G = this;
         }
         //Returns the last segment of the path
-        get file() {
+        get file(){
             return this.path.split("/").pop();
         }
-        //returns the name of the file less the extension
-        get filename() {
-            return this.file.split(".").shift();
-        }
-
 
 
         //Returns the all but the last segment of the path
-        get dir() {
-            return this.path.split("/").slice(0, -1).join("/") || "/";
+        get dir(){
+            return this.path.split("/").slice(0,-1).join("/") || "/";
         }
 
         get pathname() {
@@ -2396,10 +2244,6 @@ var glow = (function () {
         get ext() {
             const m = this.path.match(/\.([^\.]*)$/);
             return m ? m[1] : "";
-        }
-
-        get search() {
-            return this.query;
         }
     }
 
@@ -2504,56 +2348,76 @@ var glow = (function () {
     };
 
 
-
+    /** Implement Basic Fetch Mechanism for NodeJS **/
+    if (typeof(fetch) == "undefined" && typeof(global) !== "undefined") {
+        (async () => {
+            console.log("Moonshot");
+            
+            global.fetch = (url, data) =>
+                new Promise(async (res, rej) => {
+                    let p = await path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+                    try {
+                        let data = await fs.readFile(p, "utf8");
+                        return res({
+                            status: 200,
+                            text: () => {
+                                return {
+                                    then: (f) => f(data)
+                                }
+                            }
+                        })
+                    } catch (err) {
+                        return rej(err);
+                    }
+                });
+        })();
+    }
 
 
     let SIMDATA = null;
 
     /* Replaces the fetch actions with functions that simulate network fetches. Resources are added by the user to a Map object. */
-    URL.simulate = function() {
+    URL.simulate = function(){
         SIMDATA = new Map;
-        URL.prototype.fetchText = async d => ((d = this.toString()), SIMDATA.get(d)) ? SIMDATA.get(d) : "";
-        URL.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {};
+        URL.prototype.fetchText = async d => ((d = this.toString()), SIMDATA.get(d)) ? SIMDATA.get(d) : "" ;
+        URL.prototype.fetchJSON = async d => ((d = this.toString()), SIMDATA.get(d)) ? JSON.parse(SIMDATA.get(d).toString()) : {} ;
     };
 
     //Allows simulated resources to be added as a key value pair, were the key is a URI string and the value is string data.
-    URL.addResource = (n, v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
+    URL.addResource = (n,v) => (n && v && (SIMDATA || (SIMDATA = new Map())) && SIMDATA.set(n.toString(), v.toString));
 
-    URL.polyfill = async function() {
-
-        if (typeof(global) !== "undefined") {
-
-            const 
-                fs = (await import("fs")).promises,
-                path = (await import("path"));
+    URL.polyfill = function() {    if (typeof(global) !== "undefined") {
+        console.log("AAAAAAAAAAAAAAAAAAAAAA");
+            const fs = (import("fs")).promises;
+            const path = (import("path"));
 
 
-            global.Location = (class extends URL {});
-
+            global.Location =  (class extends URL{});
+            
             global.document = global.document || {};
 
-            global.document.location = new URL(process.cwd() + "/");
+            global.document.location = new URL(process.env.PWD);
             /**
              * Global `fetch` polyfill - basic support
              */
-            global.fetch = async (url, data) => {
-                let
-                    p = path.resolve(process.cwd(), "" + url),
-                    d = await fs.readFile(p, "utf8");
-
-                try {
-                    return {
-                        status: 200,
-                        text: () => {
-                            return {
-                                then: (f) => f(d)
-                            }
+            global.fetch = (url, data) =>
+                new Promise((res, rej) => {
+                    let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+                    fs.readFile(p, "utf8", (err, data) => {
+                        if (err) {
+                            rej(err);
+                        } else {
+                            res({
+                                status: 200,
+                                text: () => {
+                                    return {
+                                        then: (f) => f(data)
+                                    }
+                                }
+                            });
                         }
-                    };
-                } catch (err) {
-                    throw err;
-                }
-            };
+                    });
+                });
         }
     };
 
@@ -6198,4 +6062,4 @@ var glow = (function () {
 
     return Animation;
 
-}());
+}(spark));

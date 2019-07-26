@@ -28,10 +28,10 @@
   resolved "https://registry.yarnpkg.com/@candlefw/observer/-/observer-1.0.0.tgz#03633b9086b8dee36cc2f7694d2ad3c99c91d6d7"
   integrity sha512-u9yY6uovNYNKk0/fZ89ItDoVB7FMtaS5J7Jqz0/TDJX+n8rhWrH/s0JWd95rEb0cC3hm+d1UNLSctt6hDiHphQ==
 
-"@candlefw/spark@latest":
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/@candlefw/spark/-/spark-0.0.5.tgz#f3605a3da206d12ffa339278b0c21495b5c032f3"
-  integrity sha512-z7AKEtwBaixbP3+ToEVIDS0xyf0v6fpwIgHzc4YEVY1hAMN4lGPa9kDrPsNd7XwOdP7K0C+rJdF3zoWAPHNakA==
+"@candlefw/spark@^0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@candlefw/spark/-/spark-0.0.6.tgz#26534f438aa644ead1b9e3c94849ddc9d8ce3d97"
+  integrity sha512-GY3aRWLRdYgJBwJkIw/uUXYUt1nw8A0wrLGxTLKHDscSxzFkdalpCAQAjiX1BbhMVa62hf7M2097oa4yrM88lQ==
 
 "@candlefw/url@latest":
   version "0.0.7-a"

@@ -1,5 +1,5 @@
-import glow from "../source/glow.mjs";
-
+import glow from "../source/glow.js";
+import spark from "@candlefw/spark";
 const chai = require("chai");
 chai.should();
 
@@ -14,46 +14,43 @@ describe("CFW Glow - Animation Tests On JS properties", () => {
     	this.slow(5000);
 
 
-        it("Animates numeric properties of JS objects", async () => {
+        it("Animates numeric properties of JS objects",  async () => {
             let obj = {prop:0};
-            let animation = glow({obj:obj, prop:[{v:1, dur:1000}]})
+            let animation = glow({obj:obj, prop:[{v:1000, dur:200, easing:glow.linear}]})
             animation.play();
 
-            await (new Promise((res)=>{
-            	setTimeout(()=>{
-            		//Rounding due to timing variances with setTimeout
-            		Math.floor(obj.prop*10).should.equal(5)
-            	}, 501)
+            const t = spark.frame_time;
 
-            	setTimeout(()=>{
-            		//Rounding due to timing variances with setTimeout
-            		Math.floor(obj.prop*10).should.equal(10)
-            		res();	
-            	}, 1001)
+            await spark.sleep(100);
 
-            }))
+        	//Rounding due to timing variances with setTimeout
+        	Math.floor(obj.prop).should.be.within(480,520)
+
+
+            await spark.sleep(100);
+        	//Rounding due to timing variances with setTimeout
+        	Math.floor(obj.prop).should.equal(1000)
+
+
         })
 
-        it("Animates non-numeric properties of JS objects using step interpolotion", async () => {
+        it("Animates non-numeric properties of JS objects using stepped interpolation",  async function() {
         	let obj = {prop:"Thom"};
-            let animation = glow({obj:obj, prop:[{v:"Jake", dur:200}, {v:"Thumb", dur:400}, {v:obj, dur:400}]})
+            let animation = glow({obj, prop:[{v:"Jake", dur:50}, {v:"Thumb", dur:100}, {v:obj, dur:150}]})
+            
             animation.play();
 
-            await (new Promise((res)=>{
-            	setTimeout(()=>{
-            		obj.prop.should.equal("Jake")
-            	}, 150)
+            await spark.sleep(52);
+        	
+            obj.prop.should.equal("Jake")
+        	
+            await spark.sleep(160);
 
-            	setTimeout(()=>{
-            		obj.prop.should.equal("Thumb")
-            	}, 500)
+        	obj.prop.should.equal("Thumb")
 
-            	setTimeout(()=>{
-            		obj.prop.should.equal(obj)
-            		res();	
-            	}, 1001)
-
-            }))
+            await spark.sleep(300);
+        	
+        	obj.prop.should.equal(obj);
         })
         it("Animates array numeric members", async () => {
 

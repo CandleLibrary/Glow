@@ -32,7 +32,9 @@ const
 
         // Class to linearly interpolate number.
         class lerpNumber extends Number { lerp(to, t, from = 0) { return this + (to - this) * t; } copy(val) { return new lerpNumber(val); } }
-        class lerpNonNumeric { constructor(v) { this.v = v } lerp(to, t) { return to.v } copy(val) { return new lerpNonNumeric(val) } }
+        class lerpNonNumeric { constructor(v) { this.v = v } lerp(to, t, from) { 
+            return from.v 
+        } copy(val) { return new lerpNonNumeric(val) } }
 
 
         // Store animation data for a single property on a single object. Hosts methods that can create CSS based interpolation and regular JS property animations. 

@@ -8,7 +8,6 @@ const
     CSS_Transform2D = css.types.transform2D,
     CSS_Path = css.types.path,
     CSS_Bezier = css.types.cubic_bezier,
-
     Animation = (function anim() {
 
         var USE_TRANSFORM = false;
@@ -32,9 +31,13 @@ const
 
         // Class to linearly interpolate number.
         class lerpNumber extends Number { lerp(to, t, from = 0) { return this + (to - this) * t; } copy(val) { return new lerpNumber(val); } }
-        class lerpNonNumeric { constructor(v) { this.v = v } lerp(to, t, from) { 
-            return from.v 
-        } copy(val) { return new lerpNonNumeric(val) } }
+
+        class lerpNonNumeric {
+            constructor(v) { this.v = v } lerp(to, t, from) {
+                return from.v
+            }
+            copy(val) { return new lerpNonNumeric(val) }
+        }
 
 
         // Store animation data for a single property on a single object. Hosts methods that can create CSS based interpolation and regular JS property animations. 
@@ -53,9 +56,8 @@ const
 
                 if (prop_name == "transform")
                     this.type = CSS_Transform2D;
-                else {
+                else
                     this.type = this.getType(k0_val);
-                }
 
                 this.getValue(obj, prop_name, type, k0_val);
 
@@ -172,7 +174,7 @@ const
                         val_out = val_end;
                     }
                 }
-                
+
                 return val_out;
             }
 
@@ -207,12 +209,15 @@ const
                 this.time = 0;
                 this.obj = null;
                 this.type = setType(obj);
+
                 this.DESTROYED = false;
                 this.FINISHED = false;
-                this.CSS_ANIMATING = false;
-                this.events = {};
                 this.SHUTTLE = false;
                 this.REPEAT = 0;
+
+                this.events = {};
+
+                this.CSS_ANIMATING = false;
                 this.SCALE = 1;
 
                 switch (this.type) {
@@ -293,80 +298,6 @@ const
                 return true;
             }
 
-            scheduledUpdate(a, t) {
-
-                this.time += t * this.SCALE;
-                if (this.run(this.time)) {
-                    spark.queueUpdate(this);
-                } else if (this.REPEAT) {
-                    let scale = this.SCALE;
-
-                    this.REPEAT--;
-
-                    if (this.SHUTTLE)
-                        scale = -scale
-
-                    let from = (scale > 0) ? 0 : this.duration;
-
-                    this.play(scale, from)
-                } else
-                    this.issueEvent("stopped");
-
-            }
-
-            //TODO: use repeat to continually play back numation 
-            repeat(count = 1) {
-                this.REPEAT = Math.max(0, parseFloat(count));
-                return this;
-            }
-            //TODO: allow scale to control playback speed and direction
-            play(scale = 1, from = 0) {
-                this.SCALE = scale;
-                this.time = from;
-                spark.queueUpdate(this);
-                this.issueEvent("started");
-                return this;
-            }
-
-            set(i = 0) {
-                if (i >= 0)
-                    this.run(i * this.duration);
-                else
-                    this.run(this.duration - i * this.duration);
-            }
-
-
-            shuttle(SHUTTLE = true) {
-                this.SHUTTLE = !!SHUTTLE;
-                return this;
-            }
-
-            addEventListener(event, listener) {
-                if (typeof(listener) === "function") {
-                    if (!this.events[event])
-                        this.events[event] = [];
-                    this.events[event].push(listener);
-                }
-            }
-
-            removeEventListener(event, listener) {
-                if (typeof(listener) === "function") {
-                    let events = this.events[event];
-                    if (events) {
-                        for (let i = 0; i < events.length; i++)
-                            if (events[i] === listener)
-                                return e(vents.splice(i, 1), true);
-                    }
-                }
-                return false;
-            }
-
-            issueEvent(event) {
-                let events = this.events[event];
-
-                if (events)
-                    events.forEach(e => e(this));
-            }
 
             toCSSString(keyfram_id) {
 
@@ -422,22 +353,26 @@ const
             }
         }
 
+
         class AnimGroup {
 
-            constructor() {
+            constructor(sequences) {
+
                 this.seq = [];
                 this.time = 0;
                 this.duration = 0;
+
+                this.DESTROYED = false;
+                this.FINISHED = false;
                 this.SHUTTLE = false;
                 this.REPEAT = 0;
-                this.SCALE = 1;
-                this.ANIM_COMPLETE_FUNCTION = null;
-            }
 
-            observeStop(fun) {
-                if (typeof fun == "function")
-                    return (new Promise((res=>this.ANIM_COMPLETE_FUNCTION = res))).then(fun);
-                return this;
+                this.events = {};
+
+                this.ANIM_COMPLETE_FUNCTIONS = [];
+
+                for (const seq of sequences)
+                    this.add(seq)
             }
 
             destroy() {
@@ -459,17 +394,33 @@ const
                 if (t >= this.duration)
                     return false;
 
+
                 return true;
             }
 
-            scheduledUpdate(a, t) {
-                this.time += t * this.SCALE;
-                if (this.run(this.time))
-                    spark.queueUpdate(this);
-                else if (repeat) {
-                    let scale = this.scale;
+            stop() {
+                return this;
+            }
+        }
 
-                    repeat--;
+        /** SHARED METHODS **/
+        const common_functions = {
+            issueEvent(event) {
+                const events = this.events[event];
+
+                if (events)
+                    events.forEach(e => e(this));
+            },
+
+            scheduledUpdate(a, t) {
+
+                this.time += t * this.SCALE;
+                if (this.run(this.time)) {
+                    spark.queueUpdate(this);
+                } else if (this.REPEAT) {
+                    let scale = this.SCALE;
+
+                    this.REPEAT--;
 
                     if (this.SHUTTLE)
                         scale = -scale
@@ -477,72 +428,96 @@ const
                     let from = (scale > 0) ? 0 : this.duration;
 
                     this.play(scale, from)
-                }
-            }
+                } else
+                    this.issueEvent("stopped");
+            },
+
+            await: async function() {
+                return this.observeStop(() => {})
+            },
+
+            observeStop(fun) {
+                return (new Promise((res => {
+                    const fn = () => {
+                        res();
+                        this.removeEventListener(fn);
+                    };
+                    this.addEventListener("stopped", fn)
+                }))).then(fun);
+            },
 
             shuttle(SHUTTLE = true) {
                 this.SHUTTLE = !!SHUTTLE;
                 return this;
-            }
+            },
 
-            stop() {
-                return this;
-            }
-
-            set(i = 0) {
+            set(count = 1) {
                 if (i >= 0)
                     this.run(i * this.duration);
                 else
                     this.run(this.duration - i * this.duration);
-            }
+            },
 
-            //TODO: allow scale to control playback speed and direction
+            repeat(count = 1) {
+                this.REPEAT = Math.max(0, parseFloat(count));
+                return this;
+            },
+
             play(scale = 1, from = 0) {
                 this.SCALE = scale;
                 this.time = from;
                 spark.queueUpdate(this);
+                this.issueEvent("started");
                 return this;
-            }
-            //TODO: use repeat to continually play back numation 
-            repeat(count = 0) {
-                this.REPEAT = Math.max(0, parseInt(count));
-                return this;
+            },
+
+            addEventListener(event, listener) {
+                if (typeof(listener) === "function") {
+                    if (!this.events[event])
+                        this.events[event] = [];
+                    this.events[event].push(listener);
+                }
+            },
+
+            removeEventListener(event, listener) {
+                if (typeof(listener) === "function") {
+                    let events = this.events[event];
+                    if (events) {
+                        for (let i = 0; i < events.length; i++)
+                            if (events[i] === listener)
+                                return e(vents.splice(i, 1), true);
+                    }
+                }
+                return false;
             }
         }
 
+        Object.assign(AnimGroup.prototype, common_functions);
+        Object.assign(AnimSequence.prototype, common_functions);
+
+        /** END SHARED METHODS **/
+
+
         const GlowFunction = function(...args) {
 
-            if (args.length > 1) {
+            const output = [];
 
-                let group = new AnimGroup();
-
-                for (let i = 0; i < args.length; i++) {
-                    let data = args[i];
-
-                    let obj = data.obj;
-                    let props = {};
-
-                    Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay: true })[k])) props[k] = data[k]; });
-
-                    group.add(new AnimSequence(obj, props));
-                }
-
-                return group;
-
-            } else {
-                let data = args[0];
+            for (let i = 0; i < args.length; i++) {
+                let data = args[i];
 
                 let obj = data.obj;
                 let props = {};
 
                 Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay: true })[k])) props[k] = data[k]; });
 
-                let seq = new AnimSequence(obj, props);
-
-                return seq;
+                output.push(new AnimSequence(obj, props))
             }
-        }
 
+            if (args.length > 1)
+                return (new AnimGroup(output));
+
+            return output.pop();
+        }
         Object.assign(GlowFunction, {
 
             createSequence: GlowFunction,
@@ -562,6 +537,7 @@ const
             ease_out: new CSS_Bezier(0.2, 0.8, 0.3, 0.99),
             ease_in_out: new CSS_Bezier(0.42, 0, 0.58, 1),
             overshoot: new CSS_Bezier(0.2, 1.5, 0.2, 0.8),
+            anticipate: new CSS_Bezier(0.5, -0.5, 0.5, 0.8),
             custom: (x1, y1, x2, y2) => new CSS_Bezier(x1, y1, x2, y2)
         })
 

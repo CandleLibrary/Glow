@@ -1,5 +1,4 @@
 import spark from "@candlefw/spark";
-
 import { Animation } from "./animation";
 import { TransformTo } from "./transformto";
 

@@ -1,6 +1,6 @@
-import { Animation } from "./animation";
-import { Transitioneer } from "./transitioneer";
-import { TransformTo } from "./transformto";
+import { Animation } from "./animation.js";
+import { Transitioneer } from "./transitioneer.js";
+import { TransformTo } from "./transformto.js";
 
 Object.assign(Animation, {
 	createTransition:(...args) => Transitioneer.createTransition(...args),

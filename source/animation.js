@@ -404,6 +404,7 @@ const
         }
 
         /** SHARED METHODS **/
+        
         const common_functions = {
             issueEvent(event) {
                 const events = this.events[event];
@@ -496,7 +497,6 @@ const
         Object.assign(AnimSequence.prototype, common_functions);
 
         /** END SHARED METHODS **/
-
 
         const GlowFunction = function(...args) {
 

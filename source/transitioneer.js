@@ -1,6 +1,7 @@
 import spark from "@candlefw/spark";
-import { Animation } from "./animation";
-import { TransformTo } from "./transformto";
+
+import { Animation } from "./animation.js";
+import { TransformTo } from "./transformto.js";
 
 const Transitioneer = (function() {
 

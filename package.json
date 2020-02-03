@@ -3,7 +3,7 @@
   "version": "0.0.9",
   "description": "Animation Library",
   "main": "source/glow.js",
-
+  "type": "module",
   "scripts": {
     "test": "mocha test/test.js -r esm ",
     "test.watch": "mocha test/test.js -r esm --watch",

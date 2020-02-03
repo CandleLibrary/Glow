@@ -27,7 +27,7 @@
     "test": "test"
   },
   "devDependencies": {
-    "@candlefw/spark": "^0.0.6",
+    "@candlefw/spark": "^0.0.8",
     "chai": "^4.2.0",
     "esm": "^3.0.84",
     "mocha": "^5.2.0",

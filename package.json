@@ -41,7 +41,7 @@
   },
   "homepage": "https://github.com/galactrax/cfw-glow#readme",
   "dependencies": {
-    "@candlefw/css": "latest",
+    "@candlefw/css": "0.1.6",
     "@candlefw/math": "latest"
   }
 }

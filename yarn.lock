@@ -7,15 +7,15 @@
   resolved "https://registry.yarnpkg.com/@candlefw/color/-/color-1.0.1-0.tgz#b8c2fae3e27c9c805c5dbb774695df2d1bca94f0"
   integrity sha512-/K8WZYcHF20Y2EZgAstCXiaRnM/kU8q8H4IQyvBH+AmFOyekGhTuJmH/qwV2yX2BL5bPIBOT+NEuVe9IGcEA/A==
 
-"@candlefw/css@latest":
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/@candlefw/css/-/css-0.1.5.tgz#23033b7cae793bceb037cd93fec594918d6832c7"
-  integrity sha512-kwq9EE+/VW5z5uJPsqAMIkrRlXDfNDcp2CBk66NZVZwTJ72ynjDkB7/ywDkHX00OYA4YoiYs6w4Wpjml1XsmGg==
+"@candlefw/css@0.1.6":
+  version "0.1.6"
+  resolved "https://registry.yarnpkg.com/@candlefw/css/-/css-0.1.6.tgz#2d9999268cfcb2708cc7ae9fadf7dfa08508ed6c"
+  integrity sha512-mH/sscHub0xM7lFGm9Z3RyL0L/sWkLHpoNVOVO32Ocuxwcs4ypv62F/KMY29Z3SWF7FBAxjiiPDFhIX9Iw8gkA==
   dependencies:
     "@candlefw/color" latest
     "@candlefw/math" latest
     "@candlefw/observer" "1.0.2"
-    "@candlefw/url" latest
+    "@candlefw/url" "0.0.13"
     "@candlefw/whind" latest
 
 "@candlefw/math@latest":
@@ -33,10 +33,10 @@
   resolved "https://registry.yarnpkg.com/@candlefw/spark/-/spark-0.0.8.tgz#f4f2e662e5d389d7eabb98e8e571179c6ccba485"
   integrity sha512-wsgXUOz5qYVFMGSECzu4585j4hJp9otperAI1FKWHbXnOsMdw3kukUOrwfufJuKavnAb3omAAHembrllSnN6xQ==
 
-"@candlefw/url@latest":
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/@candlefw/url/-/url-0.0.11.tgz#628f1cae7afb62ab7872017bed79851a2fd2740b"
-  integrity sha512-4TVjswHtoFMze4llOr5JgtNJOdLE+JutHW6S24u3NU+WNPZarQFjQke4SSl7r6yThZHdtNTWQ4MFFYQC04te6A==
+"@candlefw/url@0.0.13":
+  version "0.0.13"
+  resolved "https://registry.yarnpkg.com/@candlefw/url/-/url-0.0.13.tgz#5abf5b7420eb44ba996f288e7297b2f933d2b476"
+  integrity sha512-FFJ1usgjtK2Spre8vfxla2TsImjLEh9X5x1JfXhOEDwKxex3WTWcRvN2VRug+yS50Xm888VcyeSJ24FunYR48A==
   dependencies:
     "@candlefw/whind" latest
 
@@ -275,9 +275,9 @@ pathval@^1.1.0:
   integrity sha1-uULm1L3mUwBe9rcTYd74cn0GReA=
 
 resolve@^1.1.6, resolve@^1.10.0:
-  version "1.15.0"
-  resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.15.0.tgz#1b7ca96073ebb52e741ffd799f6b39ea462c67f5"
-  integrity sha512-+hTmAldEGE80U2wJJDC1lebb5jWqvTYAfm3YZ1ckk1gBr0MnCqUKlwK1e+anaFljIl+F5tR5IoZcm4ZDA1zMQw==
+  version "1.15.1"
+  resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.15.1.tgz#27bdcdeffeaf2d6244b95bb0f9f4b4653451f3e8"
+  integrity sha512-84oo6ZTtoTUpjgNEr5SJyzQhzL72gaRodsSfyxC/AXRvwu0Yse9H8eF9IpGo7b8YetZhlI6v7ZQ6bKBFV/6S7w==
   dependencies:
     path-parse "^1.0.6"
 

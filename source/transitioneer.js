@@ -1,7 +1,7 @@
-import spark from "@candlefw/spark";
-
 import { Animation } from "./animation.js";
 import { TransformTo } from "./transformto.js";
+
+import common_methods from "./common_methods.js";
 
 const Transitioneer = (function() {
 
@@ -105,14 +105,9 @@ const Transitioneer = (function() {
 
     class Transition {
         constructor(override = true) {
+            this.constructCommon();
             this.in_duration = 0;
             this.out_duration = 0;
-            this.PLAY = true;
-
-            this.reverse = false;
-
-            this.time = 0;
-
             // If set to zero transitions for out and in will happen simultaneously.
             this.in_delay = 0;
 
@@ -124,7 +119,12 @@ const Transitioneer = (function() {
             ActiveTransition = this;
 
             this.out = $out.bind(this);
+            this.out.addEventListener = this.addEventListener.bind(this);
+            this.out.removeEventListener = this.removeEventListener.bind(this);
+            
             this.in = $in.bind(this);
+            this.in.addEventListener = this.addEventListener.bind(this);
+            this.in.removeEventListener = this.removeEventListener.bind(this);
 
             Object.defineProperty(this.out, "out_duration", {
                 get: () => this.out_duration
@@ -135,7 +135,6 @@ const Transitioneer = (function() {
 
         destroy() {
             let removeProps = function(seq) {
-
                 if (!seq.DESTROYED) {
                     if (obj_map.get(seq.obj) == seq)
                         obj_map.delete(seq.obj);
@@ -147,59 +146,18 @@ const Transitioneer = (function() {
             this.out_seq.forEach(removeProps);
             this.in_seq.length = 0;
             this.out_seq.length = 0;
-            this.res = null;
             this.out = null;
             this.in = null;
+            this.destroyCommon();
         }
 
         get duration() {
             return Math.max(this.in_duration + this.in_delay, this.out_duration);
         }
 
+        set duration(e){};
 
-        async start(time = 0, speed = 1, reverse = false) {
-
-            for (let i = 0; i < this.in_seq.length; i++) {
-                // let seq = this.in_seq[i];
-                // seq.beginCSSAnimation()
-            }
-
-            this.time = time;
-            this.speed = Math.abs(speed);
-            this.reverse = reverse;
-
-            if (this.reverse)
-                this.speed = -this.speed;
-
-            const t = Math.random();
-
-            return new Promise((res, rej) => {
-                
-                if (this.duration > 0)
-                    this.scheduledUpdate(0, 0);
-                
-                if (this.duration < 1)
-                    return res();
-                
-                this.res = res;
-            });
-        }
-
-        play(t) {
-
-
-            this.PLAY = true;
-            let time = this.duration * t;
-            this.step(time);
-            return time;
-        }
-
-        stop() {
-            this.PLAY = false;
-            //There may be a need to kill any existing CSS based animations
-        }
-
-        step(t) {
+        run(t) {
 
             for (let i = 0; i < this.out_seq.length; i++) {
                 let seq = this.out_seq[i];
@@ -209,7 +167,7 @@ const Transitioneer = (function() {
                 }
             }
 
-            t = Math.max(t - this.in_delay, 0);
+            const in_t = Math.max(t - this.in_delay, 0);
 
             for (let i = 0; i < this.in_seq.length; i++) {
                 let seq = this.in_seq[i];
@@ -219,37 +177,12 @@ const Transitioneer = (function() {
                 }
             }
 
-        }
-
-        scheduledUpdate(step, time) {
-            if (!this.PLAY) return;
-
-            this.time += time * this.speed;
-
-            this.step(this.time);
-
-
-            if (this.res && this.time >= this.in_delay + this.out_duration) {
-                this.res();
-                this.res = null;
-            }
-
-            if (this.reverse) {
-                if (this.time > 0)
-                    return spark.queueUpdate(this);
-            } else {
-                if (this.time < this.duration)
-                    return spark.queueUpdate(this);
-            }
-
-            if (this.res){
-                debugger
-                this.res();
-            }
-
-            this.destroy();
+            return (t <= this.duration && t >= 0);
         }
     }
+
+    Object.assign(Transition.prototype, common_methods);
+
 
     return { createTransition: (OVERRIDE) => new Transition(OVERRIDE) };
 })();

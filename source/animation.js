@@ -1,6 +1,8 @@
 import spark from "@candlefw/spark";
 import * as css from "@candlefw/css";
 
+import common_methods from "./common_methods.js";
+
 const
     CSS_Length = css.types.length,
     CSS_Percentage = css.types.percentage,
@@ -203,23 +205,13 @@ const
 
         // Stores animation data for a group of properties. Defines delay and repeat.
         class AnimSequence {
-            constructor(obj, props) {
 
-                this.duration = 0;
-                this.time = 0;
+            constructor(obj, props) {
+                this.constructCommon();
                 this.obj = null;
                 this.type = setType(obj);
-
-                this.DESTROYED = false;
-                this.FINISHED = false;
-                this.SHUTTLE = false;
-                this.REPEAT = 0;
-
-                this.events = {};
-
                 this.CSS_ANIMATING = false;
-                this.SCALE = 1;
-
+                
                 switch (this.type) {
                     case CSS_STYLE:
                         this.obj = obj;
@@ -231,7 +223,6 @@ const
                 }
 
                 this.props = {};
-
                 this.setProps(props);
             }
 
@@ -239,11 +230,9 @@ const
                 for (let name in this.props)
                     if (this.props[name])
                         this.props[name].destroy();
-                this.DESTROYED = true;
-                this.duration = 0;
                 this.obj = null;
                 this.props = null;
-                this.time = 0;
+                this.destroyCommon();
             }
 
             // Removes AnimProps based on object of keys that should be removed from this sequence.
@@ -292,10 +281,7 @@ const
                         prop.run(this.obj, n, i, this.type);
                 }
 
-                if (i >= this.duration || i <= 0)
-                    return false;
-
-                return true;
+                return (i <= this.duration && i >= 0);
             }
 
 
@@ -358,19 +344,8 @@ const
 
             constructor(sequences) {
 
+                this.constructCommon();
                 this.seq = [];
-                this.time = 0;
-                this.duration = 0;
-
-                this.DESTROYED = false;
-                this.FINISHED = false;
-                this.SHUTTLE = false;
-                this.REPEAT = 0;
-
-                this.events = {};
-
-                this.ANIM_COMPLETE_FUNCTIONS = [];
-
                 for (const seq of sequences)
                     this.add(seq)
             }
@@ -378,6 +353,7 @@ const
             destroy() {
                 this.seq.forEach(seq => seq.destroy());
                 this.seq = null;
+                this.destroyCommon();
             }
 
             add(seq) {
@@ -391,110 +367,13 @@ const
                     seq.run(t);
                 }
 
-                if (t >= this.duration)
-                    return false;
 
-
-                return true;
-            }
-
-            stop() {
-                return this;
+                return (t < this.duration);
             }
         }
 
-        /** SHARED METHODS **/
-        
-        const common_functions = {
-            issueEvent(event) {
-                const events = this.events[event];
-
-                if (events)
-                    events.forEach(e => e(this));
-            },
-
-            scheduledUpdate(a, t) {
-
-                this.time += t * this.SCALE;
-                if (this.run(this.time)) {
-                    spark.queueUpdate(this);
-                } else if (this.REPEAT) {
-                    let scale = this.SCALE;
-
-                    this.REPEAT--;
-
-                    if (this.SHUTTLE)
-                        scale = -scale
-
-                    let from = (scale > 0) ? 0 : this.duration;
-
-                    this.play(scale, from)
-                } else
-                    this.issueEvent("stopped");
-            },
-
-            await: async function() {
-                return this.observeStop(() => {})
-            },
-
-            observeStop(fun) {
-                return (new Promise((res => {
-                    const fn = () => {
-                        res();
-                        this.removeEventListener(fn);
-                    };
-                    this.addEventListener("stopped", fn)
-                }))).then(fun);
-            },
-
-            shuttle(SHUTTLE = true) {
-                this.SHUTTLE = !!SHUTTLE;
-                return this;
-            },
-
-            set(count = 1) {
-                if (i >= 0)
-                    this.run(i * this.duration);
-                else
-                    this.run(this.duration - i * this.duration);
-            },
-
-            repeat(count = 1) {
-                this.REPEAT = Math.max(0, parseFloat(count));
-                return this;
-            },
-
-            play(scale = 1, from = 0) {
-                this.SCALE = scale;
-                this.time = from;
-                spark.queueUpdate(this);
-                this.issueEvent("started");
-                return this;
-            },
-
-            addEventListener(event, listener) {
-                if (typeof(listener) === "function") {
-                    if (!this.events[event])
-                        this.events[event] = [];
-                    this.events[event].push(listener);
-                }
-            },
-
-            removeEventListener(event, listener) {
-                if (typeof(listener) === "function") {
-                    let events = this.events[event];
-                    if (events) {
-                        for (let i = 0; i < events.length; i++)
-                            if (events[i] === listener)
-                                return e(vents.splice(i, 1), true);
-                    }
-                }
-                return false;
-            }
-        }
-
-        Object.assign(AnimGroup.prototype, common_functions);
-        Object.assign(AnimSequence.prototype, common_functions);
+        Object.assign(AnimGroup.prototype, common_methods);
+        Object.assign(AnimSequence.prototype, common_methods);
 
         /** END SHARED METHODS **/
 
@@ -518,6 +397,7 @@ const
 
             return output.pop();
         }
+
         Object.assign(GlowFunction, {
 
             createSequence: GlowFunction,

@@ -211,7 +211,7 @@ const
                 this.obj = null;
                 this.type = setType(obj);
                 this.CSS_ANIMATING = false;
-                
+
                 switch (this.type) {
                     case CSS_STYLE:
                         this.obj = obj;
@@ -385,11 +385,16 @@ const
                 let data = args[i];
 
                 let obj = data.obj;
-                let props = {};
 
-                Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay: true })[k])) props[k] = data[k]; });
+                if (obj) {
 
-                output.push(new AnimSequence(obj, props))
+
+                    let props = {};
+
+                    Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay: true })[k])) props[k] = data[k]; });
+
+                    output.push(new AnimSequence(obj, props))
+                }else console.error(`Glow animation was passed an undefined object.`)
             }
 
             if (args.length > 1)

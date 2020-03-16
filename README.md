@@ -1,6 +1,12 @@
-# CandleFW Glow
+<h1 align=center>
+    <img src="./flavor/cfw-flame-w-lib.svg" type="text/svg" rel="svg" height=80>
+</h1>
 
-The module is a set of animation objects and methods. 
+<h3 align=center>CSS and JS Animations</h3>
+
+<p align=center> <sub><b>v0.2.0</b></sub> </p>
+
+#
 
 ## Install
 
@@ -11,5 +17,3 @@ npm install --save @candlefw/glow
 ```
 ## Usage
 
->**note**:
->This script uses ES2015 module syntax,  and has the extension ***.mjs***. To include this script in a project, you may need to use the node flag ```--experimental-modules```; or, use a bundler that supports ES modules, such as [rollup](https://github.com/rollup/rollup-plugin-node-resolve).

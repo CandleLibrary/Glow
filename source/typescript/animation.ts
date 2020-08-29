@@ -6,12 +6,12 @@ import { GlowAnimation } from "./types.js";
 const html_element = typeof (HTMLElement) !== "undefined" ? HTMLElement : class { };
 
 const
-    CSS_Length = css.types.length,
-    CSS_Percentage = css.types.percentage,
-    CSS_Color = css.types.color,
-    CSS_Transform2D = css.types.transform2D,
-    CSS_Path = css.types.path,
-    CSS_Bezier = css.types.cubic_bezier,
+    CSS_Length = css.CSS_Length,
+    CSS_Percentage = css.CSS_Percentage,
+    CSS_Color = css.CSS_Color,
+    CSS_Transform2D = css.CSS_Transform2D,
+    CSS_Path = css.CSS_Path,
+    CSS_Bezier = css.CSS_Bezier,
 
     Animation = <GlowAnimation><unknown>(function anim() {
 

@@ -1,17 +1,37 @@
 import * as css from "@candlefw/css";
 
 import common_methods from "./common_methods.js";
-import { GlowAnimation } from "./types.js";
+import { GlowAnimation, AnimationInterpolation } from "./types.js";
+import { AnimateObject, AnimationProp, AnimationProps } from "./AnimateObject";
 
-const html_element = typeof (HTMLElement) !== "undefined" ? HTMLElement : class { };
+
+const CSS_Property = css.property;
+
+CSS_Property.prototype.interpolate = function (old_prop, t, new_prop): typeof CSS_Property {
+
+
+
+    return null;
+};
+
+function CSS_ClassType(name, value) {
+    return;
+}
 
 const
+    html_element = typeof (HTMLElement) !== "undefined" ? HTMLElement : class { },
+    SVG__ = (typeof (SVGElement) !== "undefined") ? SVGElement : function () { },
     CSS_Length = css.CSS_Length,
     CSS_Percentage = css.CSS_Percentage,
     CSS_Color = css.CSS_Color,
     CSS_Transform2D = css.CSS_Transform2D,
     CSS_Path = css.CSS_Path,
     CSS_Bezier = css.CSS_Bezier,
+
+
+
+    //Inject some special magic into css properties.
+
 
     Animation = <GlowAnimation><unknown>(function anim() {
 
@@ -27,19 +47,21 @@ const
             if (obj instanceof html_element)
                 return CSS_STYLE;
 
-            if (obj instanceof SVGElement)
+            if (obj instanceof SVG__)
                 return SVG;
 
             return JS_OBJECT;
         }
 
-        const Linear = { getYatX: x => x, toString: () => "linear" };
+        const Linear: AnimationInterpolation = { lerp: (to, t, from = 0) => from + (to - from) * t, getYatX: x => x, toString: () => "linear" };
 
 
         // Class to linearly interpolate number.
-        class lerpNumber extends Number { lerp(to, t, from = 0) { return this + (to - this) * t; } copy(val) { return new lerpNumber(val); } }
+        class lerpNumber extends Number { lerp(to, t, from = 0) { return Number(this) + (to - Number(this)) * t; } copy(val) { return new lerpNumber(val); } }
 
         class lerpNonNumeric {
+
+            v: any;
             constructor(v) { this.v = v; } lerp(to, t, from) {
                 return from.v;
             }
@@ -56,7 +78,7 @@ const
             current_val: any;
             type: any;
 
-            constructor(keys, obj, prop_name, type) {
+            constructor(keys: AnimationProp, obj, prop_name, type) {
                 this.duration = 0;
                 this.end = false;
                 this.keys = [];
@@ -64,13 +86,15 @@ const
 
                 const
                     IS_ARRAY = Array.isArray(keys),
+
                     k0 = IS_ARRAY ? keys[0] : keys,
+
                     k0_val = typeof (k0.value) !== "undefined" ? k0.value : k0.v;
 
                 if (prop_name == "transform")
                     this.type = CSS_Transform2D;
                 else
-                    this.type = this.getType(k0_val);
+                    this.type = this.getType(prop_name, k0_val);
 
                 this.getValue(obj, prop_name, type, k0_val);
 
@@ -99,22 +123,24 @@ const
                         }
                         break;
                     case CSS_STYLE:
+
                         let name = prop_name.replace(/[A-Z]/g, (match) => "-" + match.toLowerCase());
                         let cs = window.getComputedStyle(obj);
 
-                        //Try to get computed value. If it does not exist, then get value from the style attribtute.
-                        let value = parseFloat(cs.getPropertyValue(name));
+                        //Try to get computed value. If it does not exist, then get value from the style attribute.
+                        let value: string | number = cs.getPropertyValue(name);
 
-                        if (!value)
-                            value = parseFloat(obj.style[prop_name]);
+                        if (!value) value = obj.style[prop_name];
 
+                        //This object will be used to render the intermediate values.
                         if (this.type == CSS_Percentage) {
+                            value = parseFloat(<string>value);
                             if (obj.parentElement) {
 
                                 const
                                     pcs = window.getComputedStyle(obj.parentElement),
                                     pvalue = parseFloat(pcs.getPropertyValue(name)),
-                                    ratio = value / parseFloat(pvalue);
+                                    ratio = value / pvalue;
 
                                 value = (ratio * 100);
                             }
@@ -127,35 +153,40 @@ const
                 }
             }
 
-            getType(value) {
+            getType(name, value) {
 
                 switch (typeof (value)) {
                     case "number":
                         return lerpNumber;
                         break;
                     case "string":
-                        if (CSS_Length._verify_(value))
-                            return CSS_Length;
-                        if (CSS_Percentage._verify_(value))
-                            return CSS_Percentage;
-                        if (CSS_Color._verify_(value))
-                            return CSS_Color;
+                        const type = css.parseProperty(name, value, false)?.val[0]?.constructor;
+
+                        if (!type) {
+                            if (CSS_Length._verify_(value))
+                                return CSS_Length;
+                            if (CSS_Percentage._verify_(value))
+                                return CSS_Percentage;
+                            if (CSS_Color._verify_(value))
+                                return CSS_Color;
+                        }
+                        return type;
                     //intentional
                     case "object":
                         return lerpNonNumeric;
                 }
             }
 
-            addKey(key, prev) {
+            addKey(key: AnimationProp, prev) {
                 let
                     l = this.keys.length,
                     pkey = this.keys[l - 1],
                     v = (key.value !== undefined) ? key.value : key.v,
                     own_key = {
                         val: (prev) ? prev.copy(v) : new this.type(v) || 0,
-                        dur: key.duration || key.dur || 0,
-                        del: key.delay || key.del || 0,
-                        ease: key.easing || key.e || ((pkey) ? pkey.ease : Linear),
+                        dur: key.duration ?? key.dur ?? 0,
+                        del: key.delay ?? key.del ?? 0,
+                        ease: key.easing ?? key.e ?? ((pkey) ? pkey.ease : Linear),
                         len: 0
                     };
 
@@ -211,7 +242,7 @@ const
             setProp(obj, prop_name, value, type) {
                 switch (type) {
                     case CSS_STYLE:
-                        obj.style[prop_name] = value;
+                        obj.style[prop_name] = value.toString();
                         break;
                     case SVG:
                         obj.setAttribute(prop_name, value.toString());
@@ -284,12 +315,12 @@ const
                 }
             }
 
-            unsetProps(props) {
+            unsetProps(props: AnimationProps) {
                 for (let name in this.props)
                     this.props[name].unsetProp(this.obj, name);
             }
 
-            setProps(props) {
+            setProps(props: AnimationProps) {
                 for (let name in this.props)
                     this.props[name].destroy();
 
@@ -299,7 +330,7 @@ const
                     this.configureProp(name, props[name]);
             }
 
-            configureProp(name, keys) {
+            configureProp(name: string, keys: AnimationProp) {
                 let prop;
                 if (prop = this.props[name]) {
                     this.duration = Math.max(prop.duration || prop.dur, this.duration);
@@ -311,7 +342,6 @@ const
             }
 
             run(i) {
-
                 for (let n in this.props) {
                     let prop = this.props[n];
                     if (prop)
@@ -442,7 +472,7 @@ const
 
         /** END SHARED METHODS * */
 
-        const GlowFunction = function (...args): GlowAnimation {
+        const GlowFunction = function (...args: AnimateObject[]): GlowAnimation {
 
             const output = [];
 
@@ -454,9 +484,12 @@ const
 
                 if (obj) {
 
-                    let props = {};
+                    let props: { [key: string]: AnimationProp; } = {};
 
-                    Object.keys(data).forEach(k => { if (!(({ obj: true, match: true, delay: true })[k])) props[k] = data[k]; });
+                    Object.keys(data)
+                        .forEach(
+                            k => { if (!({ obj: true, match: true, delay: true }[k])) props[k] = data[k]; }
+                        );
 
                     output.push(new AnimSequence(obj, props));
                 } else console.error(`Glow animation was passed an undefined object.`);

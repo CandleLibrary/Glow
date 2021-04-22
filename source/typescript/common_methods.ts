@@ -48,8 +48,8 @@ export default <AnimationMethods>{
         return this;
     },
 
-    repeat(count = 1) {
-        this.REPEAT = Math.max(0, parseFloat(count));
+    repeat(count: number = 1) {
+        this.REPEAT = Math.max(0, +count);
         return this;
     },
 

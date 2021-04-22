@@ -1,7 +1,7 @@
 import { addModuleToCFW } from "@candlefw/cfw";
 
 import { Animation } from "./animation.js";
-import { Transitioneer } from "./transitioneer.js";
+import { Transition, Transitioneer } from "./transitioneer.js";
 import { TransformTo } from "./transformto.js";
 
 Object.assign(Animation, {
@@ -11,4 +11,5 @@ Object.assign(Animation, {
 
 addModuleToCFW(Animation, "glow");
 
+export { Transition };
 export default Animation;

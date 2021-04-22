@@ -1,6 +1,6 @@
 {
-    "name": "@candlefw/glow",
-    "version": "0.3.1",
+    "name": "@candlelib/glow",
+    "version": "0.3.2",
     "description": "Animation Library",
     "main": "./build/library/glow.js",
     "types": "./build/types/glow.d.ts",
@@ -36,6 +36,6 @@
     "dependencies": {
         "@candlefw/cfw": "0.0.1",
         "@candlefw/css": "0.2.8",
-        "@candlefw/spark": "0.2.0"
+        "@candlelib/spark": "0.2.0"
     }
 }

@@ -9,6 +9,10 @@ const enum AnimationEvent {
  */
 export interface AnimationMethods {
 
+    obj?: any;
+
+    duration: number;
+
 
     /**
      * Pass `true` as first argument to cause
@@ -106,14 +110,17 @@ type AnimSequence = AnimationMethods;
 
 type AnimGroup = AnimationMethods;
 
-type AnimationInterpolation = {
+export type AnimationInterpolation = {
     getYatX: (number) => number,
-    lerp: (arg1: number, arg2: number, arg3?: number) => number;
+    lerp: (to: number, t: number, from?: number) => number;
     copy?: () => AnimationInterpolation;
+    toString?: () => string;
 };
 
 export interface GlowAnimation {
-    createSequence: AnimSequence,
+    createSequence: (...arg1: ({
+        obj: any,
+    } & any)[]) => AnimSequence,
     createGroup: (...rest: AnimSequence[]) => AnimGroup,
     linear: AnimationInterpolation,
     ease: AnimationInterpolation,
@@ -123,5 +130,7 @@ export interface GlowAnimation {
     overshoot: AnimationInterpolation,
     anticipate: AnimationInterpolation,
     custom: (x1: number, y1: number, x2: number, y2: number) => AnimationInterpolation;
+
+
 }
 

@@ -17,7 +17,7 @@ function setToWithTransform(box_a, box_b, seq) {
     seq.props.transform.keys[1].val = BTransform;
 }
 
-function setTo(to, seq, duration, easing, from) {
+function setTo(to, seq, duration, easing, from?) {
 
     const cs = window.getComputedStyle(to, null);
     const rect = to.getBoundingClientRect();
@@ -146,12 +146,21 @@ function setTo(to, seq, duration, easing, from) {
  * @param easing 
  * @param HIDE_OTHER - Remove element_to after transformation is complete. 
  */
-export function TransformTo(element_from, element_to, duration = 500, easing = Animation.linear, HIDE_OTHER = false) {
+
+export function TransformTo(
+    element_from,
+    element_to?,
+    duration = 500,
+    easing = Animation.linear,
+    HIDE_OTHER = false
+) {
+
     let rect = element_from.getBoundingClientRect();
     let cs = window.getComputedStyle(element_from, null);
     let margin_left = parseFloat(cs.getPropertyValue("margin"));
 
     let seq = Animation.createSequence({
+
         obj: element_from,
         // /transform: [{value:"translate(0,0)"},{value:"translate(0,0)"}],
         width: { value: "0px" },

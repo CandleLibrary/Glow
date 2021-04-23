@@ -22,13 +22,13 @@ export interface AnimationMethods {
      */
     shuttle(SHUTTLE?: boolean);
 
-    set(i);
+    set(i: number);
 
     /**
      * 
-     * @param i 
+     * @param i the the ratio of the animation play from 0. Accepts negative values
      */
-    step(i);
+    step(i: number);
 
     /**
      * Play the animation. 

@@ -5,6 +5,8 @@ import { AnimationMethods } from "./types";
 let i = 0;
 export default <AnimationMethods>{
 
+    duration: 0,
+
     await: async function () {
         return this.observeStop();
     },
@@ -27,6 +29,13 @@ export default <AnimationMethods>{
     step(i) { return this.set(i); },
 
     play(scale = 1, from = 0) {
+        if (this.duration == 0) {
+            //Short circuit animation
+            this.time = 0;
+            this.scheduledUpdate(0, 10000000);
+            return this;
+        }
+
         this.PLAY = true;
         this.SCALE = scale;
         this.time = from;
@@ -72,6 +81,11 @@ export default <AnimationMethods>{
         return false;
     },
 
+    issueStopped() {
+        this.issueEvent("stopped");
+        return this;
+    },
+
     issueEvent(event) {
         if (this.events[event])
             this.events[event] = this.events[event].filter(e => e(this) !== false);
@@ -97,7 +111,7 @@ export default <AnimationMethods>{
 
         if (this.run(this.time)) {
             if (i++ > 10000)
-                this.issueEvent("stopped");
+                this.issueStopped();
             spark.queueUpdate(this);
         } else if (this.REPEAT) {
             let scale = this.SCALE;
@@ -111,7 +125,7 @@ export default <AnimationMethods>{
 
             this.play(scale, from);
         } else {
-            this.issueEvent("stopped");
+            this.issueStopped();
         }
     },
 

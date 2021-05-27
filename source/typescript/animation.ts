@@ -1,4 +1,4 @@
-import * as css from "@candlefw/css";
+import * as css from "@candlelib/css";
 
 import common_methods from "./common_methods.js";
 import { GlowAnimation, AnimationInterpolation } from "./types.js";

@@ -1,5 +1,5 @@
 import glow from "../source/glow.js";
-import spark from "@candlefw/spark";
+import spark from "@candlelib/spark";
 const chai = require("chai");
 chai.should();
 

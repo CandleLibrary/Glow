@@ -1,4 +1,4 @@
-import { addModuleToCFW } from "@candlefw/cfw";
+import { addModuleToCFW } from "@candlelib/candle";
 
 import { Animation } from "./animation.js";
 import { Transition, Transitioneer } from "./transitioneer.js";

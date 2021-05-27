@@ -1,4 +1,4 @@
-import * as css from "@candlefw/css";
+import * as css from "@candlelib/css";
 
 import { Animation } from "./animation.js";
 

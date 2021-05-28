@@ -1,4 +1,3 @@
-import { t } from "@candlefw/wind/build/types/ascii_code_points";
 import { AnimationInterpolation } from "./types";
 
 export interface AnimationProp {

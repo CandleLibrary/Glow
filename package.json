@@ -34,7 +34,6 @@
     },
     "homepage": "https://github.com/galactrax/cfw-glow#readme",
     "dependencies": {
-        "@candlelib/library": "0.0.1",
         "@candlelib/css": "0.2.8",
         "@candlelib/spark": "0.2.0"
     }

@@ -6,8 +6,8 @@
     "types": "./build/types/glow.d.ts",
     "type": "module",
     "scripts": {
-        "test": "cfw.test ./test/**",
-        "test.watch": "cfw.test -w ./test/**",
+        "test": "candle.cure ./test/**",
+        "test.watch": "candle.cure -w ./test/**",
         "prepublishOnly": "tsc -p ./tsconfig.json && yarn test"
     },
     "repository": {

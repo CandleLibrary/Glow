@@ -4,22 +4,26 @@ import spark from "@candlelib/spark";
 global.HTMLElement = function () { };
 
 assert_group("Animates numeric properties of JS objects", sequence, () => {
+
     let obj = { prop: 0 };
+
     let animation = glow({ obj: obj, prop: [{ v: 1000, dur: 200, easing: glow.linear }] });
+
     animation.play();
 
     const t = spark.frame_time;
 
     await spark.sleep(100);
 
-    //Rounding due to timing variances with setTimeout
+
     assert(Math.floor(obj.prop) > 480);
-    assert(Math.floor(obj.prop) < 500);
+
+    assert(Math.floor(obj.prop) < 550);
 
 
     await spark.sleep(100);
-    //Rounding due to timing variances with setTimeout
-    assert(Math.floor(obj.prop) == 1000).should.equal(1000);
+
+    assert(Math.floor(obj.prop) == 1000);
 
 
 });

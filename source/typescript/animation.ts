@@ -27,6 +27,7 @@ const
     CSS_Transform2D = css.CSS_Transform2D,
     CSS_Path = css.CSS_Path,
     CSS_Bezier = css.CSS_Bezier,
+    CSS_String = css.CSS_String,
 
 
 
@@ -156,11 +157,12 @@ const
             getType(name, value) {
 
                 switch (typeof (value)) {
+
                     case "number":
                         return lerpNumber;
-                        break;
+
                     case "string":
-                        const type = css.parseProperty(name, value, false)?.val[0]?.constructor;
+                        const type = css.parseProperty(name, value, false)?.val?.[0]?.constructor;
 
                         if (!type) {
                             if (CSS_Length._verify_(value))
@@ -169,8 +171,8 @@ const
                                 return CSS_Percentage;
                             if (CSS_Color._verify_(value))
                                 return CSS_Color;
-                        }
-                        return type;
+                        } else
+                            return type;
                     //intentional
                     case "object":
                         return lerpNonNumeric;
@@ -178,6 +180,7 @@ const
             }
 
             addKey(key: AnimationProp, prev) {
+
                 let
                     l = this.keys.length,
                     pkey = this.keys[l - 1],

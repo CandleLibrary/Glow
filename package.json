@@ -8,7 +8,7 @@
     "scripts": {
         "test": "candle.cure ./test/",
         "test.watch": "candle.cure -w ./test/**",
-        "prepublish": "rm -rf ./build && tsc & sleep 10"
+        "prepublishOnly": "rm -rf ./build && tsc & sleep 10"
     },
     "repository": {
         "type": "git",

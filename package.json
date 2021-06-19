@@ -14,6 +14,12 @@
         "type": "git",
         "url": "git+https://github.com/galactrax/cfw-glow.git"
     },
+    "files": [
+        "/build",
+        "/README.md",
+        "/CHANGELOG.md",
+        "/LICENSE"
+    ],
     "keywords": [
         "Animation"
     ],

@@ -98,7 +98,7 @@ function $out(...data) {
 
 
 
-class TransitionClass {
+export class TransitionClass {
 
 
 
@@ -208,4 +208,4 @@ Object.assign(TransitionClass.prototype, common_methods);
 
 export type Transition = TransitionClass & AnimationMethods;
 
-export const Transitioneer = { createTransition: (OVERRIDE: boolean = false) => new TransitionClass(OVERRIDE) };
+export const Transitioneer = { createTransition: (OVERRIDE: boolean = false): Transition => <Transition>new TransitionClass(OVERRIDE) };

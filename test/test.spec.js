@@ -15,15 +15,13 @@ assert_group("Animates numeric properties of JS objects", sequence, () => {
 
     await spark.sleep(100);
 
-
-    assert(Math.floor(obj.prop) > 480);
+    assert(Math.floor(obj.prop) > 400);
 
     assert(Math.floor(obj.prop) < 650);
 
+    await spark.sleep(200);
 
-    await spark.sleep(100);
-
-    assert(Math.floor(obj.prop) == 1000);
+    assert(Math.floor(obj.prop) >= 900);
 
 
 });

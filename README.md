@@ -1,8 +1,4 @@
-
-
-<h1 align=center>
-<img alt="cfw.glow" height="100" src="brand/logo.svg"/>
-</h1>
+<h1 align=center>CandleLibrary Glow</h1>
 
 <h3 align=center>Animation Library</h3>
 
